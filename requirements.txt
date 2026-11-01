@@ -1,0 +1,16 @@
+datasets
+pandas
+numpy
+scipy
+scikit-learn
+transformers
+torch
+sentencepiece
+rouge-score
+bert-score
+pyyaml
+python-dotenv
+tenacity
+matplotlib
+seaborn
+streamlit

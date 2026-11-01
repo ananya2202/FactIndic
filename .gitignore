@@ -1,0 +1,29 @@
+# secrets
+.env
+*.key
+
+# data: raw datasets and generated text stay out of Git (licenses, size). Share via the team drive.
+data/raw/*
+data/interim/*
+data/versions/*
+data/summaries/*
+data/verdicts/*
+data/labels/*
+data/real_hinglish/*
+!data/**/.gitkeep
+!data/**/*.example.jsonl
+!data/**/*.example.csv
+
+# caches and models
+.cache/
+llm_cache/
+*.sqlite
+models/
+checkpoints/
+
+# python / notebooks
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store
