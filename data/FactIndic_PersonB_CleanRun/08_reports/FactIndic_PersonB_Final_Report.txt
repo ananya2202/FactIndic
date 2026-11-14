@@ -1,0 +1,278 @@
+FACTINDIC NLP PROJECT
+PERSON B - FINAL WORK REPORT
+
+Project:
+Factuality-aware summarization for Hindi-English code-mixed text
+
+Course:
+CSET 346 - Natural Language Processing
+Team 8 - Bennett University
+
+
+1. DATA COLLECTION AND ENGLISH TRANSLATION
+
+- Sampled 250 Hindi articles from the XL-Sum Hindi dataset.
+- Completed English translation for all 250 articles using IndicTrans2.
+- Completed 5,229 sentence-level translation tasks.
+- Saved the reviewed English translation dataset:
+  09_sentence_level_translation/FactIndic_English_250_Reviewed.csv
+- Translation review records:
+  225 manually corrected and 25 human reviewed without correction.
+
+20-article translation quality audit and correction:
+- The initial audit found serious quality problems in all 20 sampled
+  English translations.
+- Selected better sentence-level translation candidates for all
+  20 articles.
+- Compared all 20 selected candidates against their Hindi source
+  articles and recorded verification notes.
+- All 20 candidates are saved separately in:
+  09_sentence_level_translation/FactIndic_Translation_Corrections_Draft.csv
+
+Verification status:
+- Minor editorial review: 14
+- Minor wording correction: 2
+- Medical terminology review: 1
+- Medical statistics review: 1
+- Legal claim wording review: 1
+- Punctuation correction: 1
+
+Structural validation:
+- 20 rows and 20 unique article IDs.
+- Zero duplicate IDs.
+- Zero empty translations.
+- All 20 candidates belong to the original review sample.
+- No candidates remain marked as needing final verification.
+
+Important limitation:
+The 20 selected candidates were checked against their Hindi sources,
+but some retain editorial or specialist review notes. This does not
+certify them as independently validated or gold-standard translations.
+The original 250-article English translation file remains unchanged.
+The 250 translations should not be treated as fully reliable reference
+data without further quality review.
+
+
+2. SENTENCE ALIGNMENT
+
+- Created manual Hindi-English sentence alignment records.
+- Total alignment records: 1,079.
+- Unique articles represented: 71.
+- Duplicate sentence pairs: 0.
+- Cleaned missing review-status metadata without making new
+  alignment approval decisions.
+
+Strictly approved sentence pairs:
+- 408 strictly approved pairs.
+- 40 articles have at least one strictly approved pair.
+- 23 articles have at least 10 strictly approved pairs.
+
+Saved files include:
+- FactIndic_Manual_Sentence_Alignment.csv
+- FactIndic_Strict_Approved_Sentence_Pairs.csv
+- FactIndic_Eligible_Articles_10plus.csv
+- FactIndic_Eligible_Approved_Sentence_Pairs.csv
+
+
+3. CONTROLLED CODE-MIXING DATASET
+
+- Selected 23 articles with at least 10 strictly approved
+  sentence pairs each.
+- Used 275 strictly approved Hindi-English sentence pairs.
+- Preserved original sentence order.
+- Retained 33 sentences in Hindi because they had no approved
+  English equivalent.
+- Generated 10%, 30%, and 50% target English-mixing versions.
+
+Final corpus-level CMI:
+- Original Hindi: 0.00%
+- 10% target: 10.01%
+- 30% target: 29.52%
+- 50% target: 49.11%
+
+Validation:
+- 23 unique articles.
+- 308 sentences.
+- Zero invalid replacements.
+- Zero missing sentences.
+- Zero missing values in the validated output.
+
+Saved dataset:
+04_mixed_data/FactIndic_Mixed_23_Validated.csv
+
+Important limitation:
+The method uses sentence-level language replacement.
+It does not generate natural word-level mixing within sentences.
+The 23-article dataset is a validated subset, not a completed
+250-article mixed dataset.
+
+
+4. HUMAN REVIEW OF MIXED ARTICLES
+
+- Completed human review of all 23 eligible mixed articles.
+- 23 unique article IDs reviewed; no duplicate IDs.
+- 5 articles retain the original sentence-level review format.
+- 18 articles use the fluency and meaning review format.
+- The review assessed language fluency, preservation of meaning,
+  translation coverage, and source-language issues.
+- Several articles retain Hindi sentences at higher mixing levels.
+- Some source Hindi sentences contain grammatical or factual
+  inconsistencies requiring separate source verification.
+- The two review formats were preserved separately; missing
+  fields were not filled with assumed ratings.
+
+Saved file:
+05_quality_checks/FactIndic_Mixed_Human_Review.csv
+
+
+5. REAL HINGLISH DATA
+
+- Reviewed 100 unique real Hinglish examples.
+- Source distribution:
+  GupShup: 44
+  MUTANT: 56
+
+Human verification:
+- Verified Hinglish: 78
+- Not verified as Hinglish: 22
+- Meaning clear: 100
+- Natural English usage: 78 Yes, 22 No
+
+Saved files:
+- 06_real_hinglish/FactIndic_Hinglish_95_Human_Review.csv
+- 06_real_hinglish/FactIndic_Hinglish_Final_Review_Summary.csv
+
+Note:
+The detailed review file contains 100 records despite "95" in
+its filename.
+
+
+6. CLAIM LABELING
+
+- Prepared 50 claim-label records.
+- 50 unique claim IDs.
+- Label distribution:
+  SUPPORTED: 24
+  NOT_ENOUGH_INFO: 26
+  CONTRADICTED: 0
+- Structural validation found no missing values or duplicate IDs.
+- All 50 claims were checked against their source articles.
+
+Saved file:
+07_claim_labels/FactIndic_50_Claim_Labeling_Sheet.csv
+
+
+7. CMI COMPARISON
+
+Per-article FactIndic CMI across 23 articles:
+
+Version                  Mean CMI       Median CMI
+Original Hindi             0.00%           0.00%
+10% target                 9.77%           8.79%
+30% target                29.40%          27.27%
+50% target                49.97%          47.29%
+
+Existing comparison datasets:
+MUTANT:
+100 records; mean CMI 6.26%; median CMI 4.77%.
+
+PHINC:
+13,738 records; mean CMI 17.61%; median CMI 16.67%.
+
+Saved file:
+05_quality_checks/CMI_MUTANT_PHINC_Comparison.csv
+
+CMI calculation note:
+English words were identified using Latin-script character
+detection. This is a script-based estimate, not a fully
+language-aware linguistic measure. Dataset sizes and sampling
+methods differ, so comparisons should be interpreted carefully.
+
+
+8. METHODOLOGY AND QUALITY FILES
+
+Mixing methodology:
+08_reports/FactIndic_Mixing_Methodology.txt
+
+Translation review:
+05_quality_checks/Human_Translation_Review_20.csv
+
+FactIndic corpus-level CMI:
+05_quality_checks/FactIndic_CMI_Summary_23.csv
+
+Per-article CMI:
+05_quality_checks/FactIndic_Per_Article_CMI_23.csv
+
+Translation correction candidates:
+09_sentence_level_translation/FactIndic_Translation_Corrections_Draft.csv
+
+
+9. ADDITIONAL FINAL VALIDATION
+
+Per-article CMI:
+- Saved 23 individual article CMI records.
+- 23 unique articles.
+- Zero missing values.
+
+Per-article mean and median CMI:
+- Original Hindi: 0.00% / 0.00%
+- 10% target: 9.77% / 8.79%
+- 30% target: 29.40% / 27.27%
+- 50% target: 49.97% / 47.29%
+
+Real Hinglish review:
+- 100 unique examples reviewed.
+- MUTANT: 56 examples.
+- GupShup: 44 examples.
+- Verified Hinglish: 78.
+- Not verified as Hinglish: 22.
+- Meaning clear: 100.
+- Natural English usage: 78 Yes, 22 No.
+
+Final CMI comparison:
+05_quality_checks/CMI_MUTANT_PHINC_Comparison.csv
+
+
+10. REMAINING LIMITATIONS AND RECOMMENDATIONS
+
+1. The 20 selected English translation candidates have been checked
+   against their Hindi sources, but some retain editorial or
+   specialist review notes.
+
+2. The original 250-article English translation dataset has not
+   been fully quality-certified. The separate correction draft
+   contains only 20 selected candidates.
+
+3. The controlled code-mixing dataset contains 23 eligible articles,
+   not 250 articles.
+
+4. The current mixing method performs sentence-level replacement.
+   Word-level or intra-sentence mixing would be needed if natural
+   Hinglish generation is required.
+
+5. CMI is estimated using Latin-script detection and is not a
+   fully language-aware linguistic measure.
+
+6. The human review formats contain two different structures.
+   Their missing fields should not be interpreted as negative ratings.
+
+7. Source Hindi inconsistencies and specialist terminology or
+   statistics may require additional subject-matter review.
+
+
+11. OVERALL STATUS
+
+Person B completed substantial data preparation, translation
+processing, sentence alignment, controlled mixing for a validated
+23-article subset, real Hinglish review, claim labeling, mixed-article
+human review, quality checks and CMI comparison.
+
+The separate 20-article translation correction candidate set has
+also been reviewed against its Hindi sources and structurally
+validated.
+
+However, translation quality remains an important limitation for
+the full 250-article dataset. The current outputs and their scope
+should be described transparently. Unreliable translations should
+not be used as trusted reference data without further correction
+and quality review.

@@ -13,7 +13,7 @@ data/real_hinglish/*
 !data/**/.gitkeep
 !data/**/*.example.jsonl
 !data/**/*.example.csv
-
+!data/FactIndic_PersonB_CleanRun/
 # caches and models
 .cache/
 llm_cache/

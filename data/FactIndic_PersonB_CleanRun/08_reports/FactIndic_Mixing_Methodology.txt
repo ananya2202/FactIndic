@@ -1,0 +1,44 @@
+
+FactIndic Controlled Code-Mixing Generation
+Person B - Data Preparation
+
+1. Source data:
+- 250 Hindi news articles were initially prepared.
+- 23 articles were selected for controlled mixing.
+- Selection was based on at least 10 strictly approved
+  Hindi-English sentence pairs per article.
+
+2. Sentence alignment:
+- 275 strictly approved sentence pairs were used.
+- All 275 Hindi sentences were found exactly in their
+  corresponding original Hindi articles.
+- 33 additional sentences had no approved English pair
+  and were retained in Hindi.
+
+3. Generation:
+- Original article sentence order was preserved.
+- Selected approved Hindi sentences were replaced with
+  their corresponding reviewed English translations.
+- No random word replacement was used.
+- Three versions were generated using deterministic
+  sentence selection.
+
+4. Final CMI results:
+- Original Hindi: 0.00%
+- 10% target: 10.01%
+- 30% target: 29.52%
+- 50% target: 49.11%
+
+5. Validation:
+- 23 unique articles in each version.
+- 308 sentences across the 23 articles.
+- Zero invalid replacements.
+- Zero missing sentences.
+- Zero missing values in the saved article dataset.
+
+6. Limitations:
+- Mixing is performed at sentence level, not word level.
+- Actual CMI may differ slightly from target percentages.
+- The 23-article dataset is a validated subset, not the
+  complete 250-article mixed dataset.
+- Human fluency review is still required.

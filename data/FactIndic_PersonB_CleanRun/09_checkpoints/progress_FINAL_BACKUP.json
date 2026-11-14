@@ -1,0 +1,120 @@
+{
+    "stage_1": {
+        "status": "completed",
+        "details": {},
+        "updated_at": "2026-11-11T11:21:20.329786"
+    },
+    "task_4_download": {
+        "status": "completed",
+        "details": {
+            "rows": 8847,
+            "columns": [
+                "id",
+                "url",
+                "title",
+                "summary",
+                "text"
+            ]
+        },
+        "updated_at": "2026-11-11T11:22:33.618184"
+    },
+    "task_4": {
+        "status": "completed",
+        "details": {
+            "sample_size": 250,
+            "random_state": 42,
+            "source_articles": 8847,
+            "columns": [
+                "id",
+                "url",
+                "title",
+                "summary",
+                "text",
+                "article_words",
+                "summary_words"
+            ]
+        },
+        "updated_at": "2026-11-11T11:23:21.015103"
+    },
+    "english_translation": {
+        "status": "completed_as_draft",
+        "details": {
+            "articles": 250,
+            "model": "Helsinki-NLP/opus-mt-hi-en",
+            "quality": "Draft; requires spot-checking",
+            "working_file": "03_english_data/FactIndic_Hindi_English_Base_250.csv"
+        },
+        "updated_at": "2026-11-11T14:37:56.790949"
+    },
+    "mixed_articles": {
+        "status": "incomplete_needs_rework",
+        "details": {
+            "reason": "Previous phrase-replacement method did not reach target English percentages.",
+            "next_step": "Use a word-level mixing method and validate actual percentages."
+        },
+        "updated_at": "2026-11-11T14:37:56.816014"
+    },
+    "sentence_alignment": {
+        "status": "experimental_not_verified",
+        "details": {
+            "file": "/content/drive/MyDrive/FactIndic_PersonB_CleanRun/05_quality_checks/FactIndic_Sentence_Alignment.csv",
+            "articles_processed": 250,
+            "sentence_pairs": 5580,
+            "method": "approximate_proportional",
+            "status": "NOT_VERIFIED",
+            "warning": "Do not use as verified sentence alignment."
+        },
+        "updated_at": "2026-11-11T13:45:37.007328"
+    },
+    "translation_quality_review": {
+        "status": "prepared_for_human_review",
+        "details": {
+            "total_articles": 250,
+            "short_translations_flagged": 43,
+            "review_candidates": 207,
+            "human_review_sample": 20,
+            "files": [
+                "05_quality_checks/Short_English_Translations_Review.csv",
+                "05_quality_checks/Translation_Review_Candidates_207.csv",
+                "05_quality_checks/Human_Translation_Review_20.csv"
+            ],
+            "note": "Length screening is not proof of translation accuracy."
+        },
+        "updated_at": "2026-11-11T14:44:38.220854"
+    },
+    "real_hinglish_collection": {
+        "status": "candidate_collection_completed",
+        "details": {
+            "mutant_candidates": 100,
+            "gupshup_likely_candidates": 44,
+            "total_before_deduplication": 144,
+            "final_rows": 144
+        },
+        "updated_at": "2026-11-11T15:11:59.751234"
+    },
+    "real_hinglish_quality_filter": {
+        "status": "strict_candidates_created",
+        "details": {
+            "mutant_threshold": "at least 10 Latin-script words",
+            "mutant_selected": 51,
+            "gupshup_threshold": "at least 2 Roman-Hindi indicators",
+            "gupshup_selected": 44,
+            "total": 95,
+            "status": "automatically filtered; human review pending"
+        },
+        "updated_at": "2026-11-11T15:33:10.523432"
+    },
+    "task_12_hinglish_human_review": {
+        "status": "completed",
+        "details": {
+            "total_candidates": 95,
+            "reviewed": 95,
+            "likely_hinglish": 73,
+            "not_hinglish": 22,
+            "final_hinglish_file": "/content/drive/MyDrive/FactIndic_PersonB_CleanRun/06_real_hinglish/FactIndic_Hinglish_73_Human_Reviewed.csv",
+            "master_review_file": "/content/drive/MyDrive/FactIndic_PersonB_CleanRun/06_real_hinglish/FactIndic_Hinglish_95_Human_Review.csv",
+            "summary_file": "/content/drive/MyDrive/FactIndic_PersonB_CleanRun/06_real_hinglish/FactIndic_Hinglish_Final_Review_Summary.csv"
+        },
+        "updated_at": "2026-11-11T15:58:18.897973"
+    }
+}

@@ -1,0 +1,203 @@
+FACTINDIC NLP PROJECT
+PERSON B - UPDATED FINAL WORK REPORT
+
+Project:
+Factuality-aware summarization for Hindi-English code-mixed text
+
+Course:
+CSET 346 - Natural Language Processing
+Team 8 - Bennett University
+
+
+1. DATA COLLECTION AND ENGLISH TRANSLATION
+
+- Sampled 250 Hindi articles from XL-Sum Hindi.
+- Completed English translation processing for all 250 articles using IndicTrans2.
+- The corrected translation dataset contains 250 rows and 250 unique article IDs.
+- No duplicate IDs, missing translations, or empty translations were found.
+- Seven translation records received corrections; 243 records remained unchanged.
+- The original reviewed translation file was preserved.
+
+Main corrected dataset:
+09_sentence_level_translation/FactIndic_English_250_Corrected.csv
+
+Translation audit:
+09_sentence_level_translation/FactIndic_Translation_Audit_230.csv
+
+The audit contains 71 unique article records.
+Seven correction records were identified:
+- Five have corrected translations prepared and are pending final review.
+- One records a factual mismatch correction.
+- One records a numerical discrepancy correction and is pending final review.
+
+The correction records should not be treated as independently certified
+translations. The full 250-article dataset still requires further
+quality review before being used as trusted reference data.
+
+
+2. SENTENCE ALIGNMENT
+
+- Created 1,079 manual Hindi-English sentence alignment records.
+- The records represent 71 unique articles.
+- Created a separate strict approved sentence-pair dataset.
+- 408 sentence pairs are strictly approved.
+- The remaining alignment records should not be described as strictly approved.
+
+Files:
+04_mixed_data/alignment/FactIndic_Manual_Sentence_Alignment.csv
+04_mixed_data/alignment/FactIndic_Strict_Approved_Sentence_Pairs.csv
+
+
+3. CONTROLLED CODE-MIXING DATASET
+
+- Prepared a validated subset of 23 eligible articles.
+- Used strictly approved Hindi-English sentence pairs.
+- Generated 10%, 30%, and 50% target English-mixing versions.
+- Preserved the sentence-level replacement approach.
+
+Validated dataset:
+04_mixed_data/FactIndic_Mixed_23_Validated.csv
+
+The dataset contains 23 rows and has no missing values.
+
+Final per-article CMI statistics:
+
+Version                  Mean CMI       Median CMI
+Original Hindi             0.00%           0.00%
+FactIndic 10%               9.77%           8.79%
+FactIndic 30%              29.40%          27.27%
+FactIndic 50%              49.97%          47.29%
+
+Limitation:
+The current approach uses sentence-level replacement. It does not
+produce natural word-level mixing within sentences. This is a
+validated 23-article subset, not a 250-article mixed corpus.
+
+
+4. MIXED-ARTICLE HUMAN REVIEW
+
+- Created human-review records for the 23 eligible mixed articles.
+- Preserved the two different review formats.
+- Reviewed fluency, meaning preservation, translation coverage,
+  and source-language issues.
+- Missing review fields were not filled using assumed ratings.
+
+Review file:
+05_quality_checks/FactIndic_Mixed_Human_Review.csv
+
+The different review formats should be interpreted according to
+their available fields. Missing fields do not imply approval.
+
+
+5. REAL HINGLISH DATA
+
+- Collected 100 unique real Hinglish candidate texts.
+- Source distribution recorded in the dataset:
+  MUTANT: 56
+  GupShup: 44
+
+Classification:
+- Marked as verified Hinglish: 78
+- Not verified as Hinglish: 22
+- Meaning clear: 100
+- Natural English usage: 78 Yes, 22 No
+
+Human-review status:
+- Human verification recorded: 5
+- Pending human review: 95
+
+The dataset has 100 unique texts. However, only five records have
+human_verified = Yes and a recorded language-quality rating.
+The other 95 records must not be described as fully human-reviewed.
+
+Files:
+06_real_hinglish/FactIndic_Hinglish_95_Human_Review.csv
+06_real_hinglish/FactIndic_Hinglish_100_Status_Tracked.csv
+06_real_hinglish/FactIndic_Hinglish_Unreviewed_Queue.csv
+06_real_hinglish/FactIndic_Hinglish_Not_Verified_Queue.csv
+
+The original Hinglish dataset was preserved.
+
+
+6. CLAIM LABELING
+
+- Prepared 50 claim-label records.
+- 50 unique claim IDs.
+- No missing values in the seven checked columns.
+
+Verdict distribution:
+SUPPORTED: 24
+NOT_ENOUGH_INFO: 26
+
+No CONTRADICTED labels are currently recorded.
+
+The sheet passes structural validation. Structural validation alone
+does not establish that every verdict is factually correct; claim
+evidence and reviewer notes should be checked against the source.
+
+File:
+07_claim_labels/FactIndic_50_Claim_Labeling_Sheet.csv
+
+
+7. FINAL CMI COMPARISON
+
+Dataset                 Records    Mean CMI    Median CMI
+MUTANT                     100       6.26%        4.77%
+PHINC                    13738      17.61%       16.67%
+FactIndic 10%               23       9.77%        8.79%
+FactIndic 30%               23      29.40%       27.27%
+FactIndic 50%               23      49.97%       47.29%
+
+Comparison file:
+05_quality_checks/CMI_MUTANT_PHINC_FactIndic_Comparison_Final.csv
+
+CMI is estimated using Latin-script detection. It is a script-based
+estimate rather than a fully language-aware linguistic measure.
+Dataset sizes and sampling methods differ, so comparisons should
+be interpreted carefully.
+
+
+8. ADDITIONAL QUALITY FILES
+
+Per-article CMI:
+05_quality_checks/FactIndic_Per_Article_CMI_23.csv
+
+Mixing methodology:
+08_reports/FactIndic_Mixing_Methodology.txt
+
+Translation correction candidates from the earlier 20-article review:
+09_sentence_level_translation/FactIndic_Translation_Corrections_Draft.csv
+
+The earlier 20-article review and the later 250-article corrected
+translation dataset are separate review outputs.
+
+
+9. OVERALL STATUS AND LIMITATIONS
+
+Person B has prepared:
+- A 250-article Hindi-English translation dataset.
+- A corrected translation dataset and translation audit.
+- Manual sentence alignment records.
+- A strictly approved sentence-pair subset.
+- A validated 23-article controlled code-mixing dataset.
+- Mixed-article human-review records.
+- A 100-example real Hinglish candidate dataset and review queues.
+- A 50-claim labeling sheet.
+- Per-article CMI statistics and a final CMI comparison.
+
+Important remaining limitations:
+1. The full 250-article translation dataset is not fully quality-certified.
+2. Some translation corrections still require final review.
+3. The controlled mixed corpus contains 23 articles, not 250.
+4. The mixing approach uses sentence-level replacement.
+5. Only five Hinglish records currently have human verification
+   and language-quality ratings recorded; 95 remain pending.
+6. The claim-label sheet passes structural checks, but its verdicts
+   should be checked against the source evidence.
+7. CMI is a script-based estimate and has linguistic limitations.
+
+OVERALL:
+Substantial Person B data preparation and validation work has been
+completed. The outputs should be reported with the above scope and
+limitations. Pending human-review work must not be represented as
+completed or independently certified.

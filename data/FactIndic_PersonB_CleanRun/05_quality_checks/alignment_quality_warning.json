@@ -1,0 +1,8 @@
+{
+    "file": "/content/drive/MyDrive/FactIndic_PersonB_CleanRun/05_quality_checks/FactIndic_Sentence_Alignment.csv",
+    "articles_processed": 250,
+    "sentence_pairs": 5580,
+    "method": "approximate_proportional",
+    "status": "NOT_VERIFIED",
+    "warning": "Do not use as verified sentence alignment."
+}
