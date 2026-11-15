@@ -144,12 +144,44 @@ FACTINDIC_MOCK=1 streamlit run app.py      # PowerShell: $env:FACTINDIC_MOCK="1"
 ```
 
 ### Run the pipeline
-The scripts are stubs, so this will work once each owner has implemented their step. Run them in numeric order:
+
+Run the upstream data, summarization, and verification steps first. Person D's analysis scripts consume the generated files in `data/processed/`.
+
+#### Person D: Metrics and analysis
+
+Run these commands from the repository root:
+
 ```bash
-python scripts/01_sample_clean.py
-python scripts/02_translate.py
-# ... through 10_analysis.py
+python3 scripts/07_metrics.py
+python3 scripts/08_human_labels.py --prepare
+python3 scripts/10_analysis.py
 ```
+
+**Tables (`results/tables/`):**
+- `metrics_summary.csv` — ROUGE scores, compression ratio, hallucination rate, and factual recall.
+- `human_annotation_sheet.csv` — 150 claims for independent human annotation.
+- `bootstrap_confidence_intervals.csv` — 95% confidence intervals using 1,000 bootstrap samples.
+- `revise_loop_comparison.csv` — before/after revision comparison.
+- `error_type_breakdown.csv` — error counts and proportions.
+
+**Figures (`results/figures/`):**
+- `mixing_curve_hallucination.png`
+- `prompt_comparison.png`
+- `revise_loop_progression.png`
+
+#### Human annotation and agreement
+
+Two annotators must independently label all 150 claims in `results/tables/human_annotation_sheet.csv` using `SUPPORTED`, `CONTRADICTED`, or `NOT_ENOUGH_INFO`.
+
+After filling the `annotator_1` and `annotator_2` columns, run:
+
+```bash
+python3 scripts/08_human_labels.py --evaluate
+```
+
+This calculates observed agreement and Cohen's kappa overall and by mixing tier, generating `annotator_agreement.csv`. Agreement metrics must not be reported until both annotations are complete.
+
+**Metric availability:** BERTScore F1 and latency are unavailable because the required measurements are not present in the source data.
 
 ## Team and workflow
 Team 8. Names to add:
