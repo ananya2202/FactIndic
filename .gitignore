@@ -1,7 +1,7 @@
 # secrets
 .env
 *.key
-
+.vscode/
 # data: raw datasets and generated text stay out of Git (licenses, size). Share via the team drive.
 data/raw/*
 data/interim/*
@@ -20,9 +20,11 @@ llm_cache/
 models/
 checkpoints/
 
+
 # python / notebooks
 __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
 .DS_Store
+.notebooks/
