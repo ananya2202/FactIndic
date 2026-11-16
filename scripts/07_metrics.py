@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 from rouge_score import rouge_scorer
+from bert_score import score as calculate_bert_score
+from bert_score import score as calculate_bert_score
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -63,6 +65,8 @@ def main():
     )
 
     results = []
+    generated_texts = []
+    reference_texts = []
     missing = 0
 
     for verdict in verdicts:
@@ -108,10 +112,17 @@ def main():
             "summary_words": summary_word_count,
             "latency_ms": None,
         })
+        generated_texts.append(generated)
+        reference_texts.append(reference)
 
     if not results:
         raise RuntimeError("No valid metric records were generated.")
 
+    print("Calculating multilingual BERTScore on CPU...")
+    _, _, bert_f1 = calculate_bert_score(generated_texts, reference_texts, model_type="bert-base-multilingual-cased", num_layers=12, device="cpu", batch_size=4, verbose=True, rescale_with_baseline=False)
+    for row, score in zip(results, bert_f1.tolist()):
+        row["bert_score_f1"] = score
+    print("BERTScore calculated for:", len(bert_f1))
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
 

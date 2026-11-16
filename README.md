@@ -3,7 +3,7 @@
 **Factuality-aware summarization for Hindi-English code-mixed text.**
 Course project for CSET 346 (Natural Language Processing), Bennett University. Team 8.
 
-> Status: planning and scaffolding. The pipeline scripts are stubs and no results exist yet. See [Roadmap](#roadmap).
+> Status: Person D's evaluation outputs have been generated. Human annotation and inter-annotator agreement are pending. See [Roadmap](#roadmap).
 
 ## Contents
 1. [Overview](#overview)
@@ -181,7 +181,11 @@ python3 scripts/08_human_labels.py --evaluate
 
 This calculates observed agreement and Cohen's kappa overall and by mixing tier, generating `annotator_agreement.csv`. Agreement metrics must not be reported until both annotations are complete.
 
-**Metric availability:** BERTScore F1 and latency are unavailable because the required measurements are not present in the source data.
+**Metric and data note:** BERTScore F1 was calculated using `bert-base-multilingual-cased`. The supplied `summaries.jsonl` contains only 10 records, while `verdicts.jsonl` contains 2,500 records with embedded summary text. The metrics script therefore uses those embedded summaries, joined with `versions.jsonl`. The `latency_ms` field is empty in the generated metrics table.
+
+**Human annotation status:** The 150-claim annotation sheet is prepared, with 30 claims per mixing tier. `annotator_agreement.csv` is pending until two independent annotators complete the sheet. No human labels or agreement scores have been fabricated.
+
+**Revision progression:** The progression figure uses the same summaries matched across rounds 0, 1 and 2 from a separate evaluation trace. It is a matched-subset analysis, not a measurement of every revised summary.
 
 ## Team and workflow
 Team 8. Names to add:
@@ -199,16 +203,24 @@ Branches, reviews, ownership of folders and the "never commit" rules are in [`CO
 `summaries.jsonl`, and every LLM call cached so nothing is paid for twice.
 
 ## Results
-No results yet. This table will be filled from `results/tables/metrics.csv`.
 
-| Version | Prompt | Hallucination rate | Factual recall | Weighted score |
-|---|---|---|---|---|
-| 0% (Hindi) | standard | | | |
-| 0% (Hindi) | factual | | | |
-| 30% mixed | standard | | | |
-| 30% mixed | factual | | | |
-| 100% (English) | standard | | | |
-| 100% (English) | factual | | | |
+Person D's generated outputs are stored in `results/tables/` and `results/figures/`.
+
+**Tables:**
+- `metrics_summary.csv` — 2,500 records with ROUGE-1/2/L F1, BERTScore F1, compression ratio, hallucination rate and factual recall.
+- `bootstrap_confidence_intervals.csv` — 95% confidence intervals from 1,000 article-cluster bootstrap samples, by mixing tier.
+- `revise_loop_comparison.csv` — before/after revision comparison.
+- `error_type_breakdown.csv` — counts for the recorded error categories.
+- `human_annotation_sheet.csv` — 150 stratified claims awaiting independent annotation.
+- `annotator_agreement.csv` — generated after both annotators complete the sheet.
+
+**Figures:**
+- `mixing_curve_hallucination.png`
+- `prompt_comparison.png`
+- `revise_loop_progression.png`
+
+The revision progression figure is based on matched summaries available in all three rounds. The analysis test suite passes: 18 tests.
+
 
 ## Roadmap
 - [ ] Phase 0: repo, file formats, labeling guide, model pilot, API budget plan

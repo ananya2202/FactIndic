@@ -105,25 +105,59 @@ def create_revision_comparison():
 
     grouped.to_csv(TABLES / "revise_loop_comparison.csv", index=False)
 
-    # Plot paired before/after averages for each mixing tier.
-    overall = (
-        df.groupby("mixing_level")
-        .agg(
-            before=("hallucination_rate_before", "mean"),
-            after=("hallucination_rate_after", "mean"),
-        )
-        .reindex(TIERS)
-    )
+    # Plot unsupported claims across revision rounds for the same summaries.
+    trace_path = DATA / "revision_round_trace_eval.jsonl"
+    trace_rows = load_jsonl(trace_path)
 
-    x = np.arange(len(overall))
+    round_data = {}
+    for row in trace_rows:
+        key = (row["article_id"], row["version_id"])
+        round_data.setdefault(key, {})[int(row["round"])] = int(
+            row["unsupported_claims"]
+        )
+
+    matched = {
+        key: rounds
+        for key, rounds in round_data.items()
+        if all(r in rounds for r in (0, 1, 2))
+    }
+
+    if not matched:
+        raise ValueError("No summaries found in all three revision rounds.")
+
+    round_numbers = [0, 1, 2]
+    unsupported_totals = [
+        sum(rounds[r] for rounds in matched.values())
+        for r in round_numbers
+    ]
+
     plt.figure(figsize=(9, 5))
-    plt.plot(x, overall["before"], marker="o", label="Before revision")
-    plt.plot(x, overall["after"], marker="o", label="After revision")
-    plt.xticks(x, [f"{int(t * 100)}%" for t in overall.index])
-    plt.xlabel("Mixing tier")
-    plt.ylabel("Mean hallucination rate")
-    plt.title("Hallucination Rate Before vs After Revision")
-    plt.ylim(0, 1)
+    plt.plot(
+        round_numbers,
+        unsupported_totals,
+        marker="o",
+        linewidth=2,
+        label="Unsupported claims",
+    )
+    for x, count in zip(round_numbers, unsupported_totals):
+        plt.annotate(
+            f"{count:,}",
+            (x, count),
+            textcoords="offset points",
+            xytext=(0, 10),
+            ha="center",
+        )
+
+    plt.xticks(round_numbers, ["Round 0", "Round 1", "Round 2"])
+    plt.xlabel("Revision round")
+    plt.ylabel("Total unsupported claims")
+    plt.title(
+        "Unsupported Claims Across Revision Rounds"
+    )
+    plt.suptitle(
+        f"Same {len(matched)} summaries compared in every round",
+        fontsize=9,
+    )
     plt.grid(axis="y", alpha=0.3)
     plt.legend()
     plt.tight_layout()
