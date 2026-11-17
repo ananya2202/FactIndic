@@ -216,7 +216,40 @@ def create_error_breakdown():
 
     result = pd.DataFrame(output)
     result.to_csv(TABLES / "error_type_breakdown.csv", index=False)
+
+    pivot = result.pivot(index="mixing_level", columns="error_type", values="count").fillna(0)
+    plt.figure(figsize=(10, 6))
+    bottom = np.zeros(len(pivot))
+    colors = ["#e74c3c", "#e67e22", "#f1c40f", "#3498db", "#9b59b6"]
+    for i, col in enumerate(pivot.columns):
+        vals = pivot[col].values
+        plt.bar([f"{int(t*100)}%" for t in pivot.index], vals, bottom=bottom, label=col.replace("_", " ").title(), color=colors[i % len(colors)])
+        bottom += vals
+    plt.xlabel("Mixing tier")
+    plt.ylabel("Error count")
+    plt.title("Factuality Error Types Across Mixing Tiers")
+    plt.legend(title="Error Type")
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(FIGURES / "error_breakdown_by_mixing.png", dpi=200)
+    plt.close()
+
     return result
+
+
+def create_cmi_distribution():
+    versions = load_jsonl(DATA / "versions.jsonl")
+    cmi_values = [float(v.get("cmi", 0)) for v in versions if v.get("cmi") is not None]
+    if cmi_values:
+        plt.figure(figsize=(9, 5))
+        plt.hist(cmi_values, bins=25, edgecolor="black", alpha=0.7, color="#2ecc71")
+        plt.xlabel("Code-Mixing Index (CMI)")
+        plt.ylabel("Number of versions")
+        plt.title("Code-Mixing Index (CMI) Distribution across 1,250 Versions")
+        plt.grid(axis="y", alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(FIGURES / "cmi_density_distribution.png", dpi=200)
+        plt.close()
 
 
 def create_prompt_comparison(df):
@@ -339,6 +372,9 @@ def main():
 
     print("Generating mixing curve...")
     create_hallucination_curve(df)
+
+    print("Generating CMI distribution plot...")
+    create_cmi_distribution()
 
     print("\n===== BOOTSTRAP CONFIDENCE INTERVALS =====")
     print(ci.round(4).to_string(index=False))

@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 from rouge_score import rouge_scorer
 from bert_score import score as calculate_bert_score
-from bert_score import score as calculate_bert_score
 
 
 ROOT = Path(__file__).resolve().parents[1]
