@@ -22,8 +22,7 @@ from factindic.verify.verifier import FactualityVerifier
 
 # Page Configuration
 st.set_page_config(
-    page_title="FactIndic Studio",
-    page_icon="🛡️",
+    page_title="FactIndic",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -35,15 +34,15 @@ st.markdown("""
     .block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 1200px; }
     .clean-card {
         border: 1px solid rgba(128, 128, 128, 0.2);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1rem;
+        border-radius: 6px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 0.8rem;
         background-color: rgba(128, 128, 128, 0.03);
     }
     .badge-tag {
         display: inline-block;
         font-family: monospace;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         text-transform: uppercase;
         padding: 0.15rem 0.45rem;
@@ -56,19 +55,25 @@ st.markdown("""
     .badge-relation { background-color: rgba(14, 165, 233, 0.15); color: #0284c7; }
     .badge-supported { background-color: rgba(34, 197, 94, 0.15); color: #16a34a; }
     .badge-unsupported { background-color: rgba(239, 68, 68, 0.15); color: #dc2626; }
-    .stat-label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
-    .stat-val { font-size: 1.4rem; font-weight: 700; font-family: monospace; }
+    .stat-label { font-size: 0.75rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-val { font-size: 1.35rem; font-weight: 700; font-family: monospace; margin-top: 0.2rem; }
+    pre code, pre {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Cache Verifier to ensure lightning-fast UI responses
+# Cache Verifier to ensure fast UI responses
 @st.cache_resource
-def get_verifier():
-    return FactualityVerifier(use_hf=False)
+def get_verifier(use_hf: bool = False):
+    return FactualityVerifier(use_hf=use_hf)
 
-@st.cache_resource
-def get_client():
-    return get_llm_client(provider="mock")
+def get_active_client(provider_name: str, api_key: str = ""):
+    if api_key:
+        import os
+        os.environ["GEMINI_API_KEY"] = api_key
+    return get_llm_client(provider=provider_name)
 
 @st.cache_data
 def load_sample_versions():
@@ -84,31 +89,43 @@ def load_metrics_df():
         return pd.read_csv(mpath)
     return None
 
-verifier = get_verifier()
-client = get_client()
 versions = load_sample_versions()
 
 # Sidebar Navigation
 with st.sidebar:
-    st.markdown("### 🛡️ **FactIndic**")
+    st.markdown("### FactIndic")
     st.caption("Factual Consistency in Code-Mixed Summaries")
     st.markdown("---")
     page = st.radio(
         "Navigation",
-        ["🔬 Live Verification Studio", "📊 Benchmark & Analysis Plots", "📑 Dataset & Verdicts Browser"],
+        ["Live Verification Studio", "Benchmark & Analysis Plots", "Dataset & Verdicts Browser"],
         index=0,
     )
     st.markdown("---")
-    st.caption("**Research Roles:**")
-    st.caption("• **Person A (Ananya)**: Verification & Claims Splitter")
-    st.caption("• **Person B (Sidra)**: Ingestion & Synthetic Engine")
-    st.caption("• **Person C (Vanshika)**: LLM Generation & Revision")
-    st.caption("• **Person D (Ishika)**: Evaluation & Analysis")
+    st.markdown("##### LLM Backend")
+    import os
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY") and os.environ.get("GEMINI_API_KEY") != "YOUR_GEMINI_API_KEY_HERE")
+    provider_options = ["Gemini API (Live Neural LLM)", "Offline Simulator (Mock)"]
+    chosen_provider_ui = st.selectbox(
+        "Generation Model:",
+        provider_options,
+        index=0 if has_gemini else 1,
+        help="Use real Gemini API for organic, un-scripted generation or the offline simulator."
+    )
+    provider_key = "gemini" if "Gemini" in chosen_provider_ui else "mock"
+    user_api_key = ""
+    if provider_key == "gemini" and not has_gemini:
+        user_api_key = st.text_input("Gemini API Key:", type="password", help="Enter key to enable live Gemini generation")
+    
+    st.caption(f"Active Provider: `{provider_key.upper()}`")
+
+client = get_active_client(provider_key, user_api_key)
+verifier = get_verifier(use_hf=False)
 
 # PAGE 1: LIVE INTERACTIVE VERIFICATION STUDIO
-if page == "🔬 Live Verification Studio":
-    st.title("🔬 Live Verification & Revision Studio")
-    st.caption("Inspect atomic claims decomposition, rule & NLI verification, and real-time iterative revision on Hinglish text.")
+if page == "Live Verification Studio":
+    st.title("Live Verification & Revision Studio")
+    st.caption("Atomic claims decomposition, rule and NLI verification, and iterative revision on Hinglish text.")
 
     col_l, col_r = st.columns([3, 2])
 
@@ -125,7 +142,7 @@ if page == "🔬 Live Verification Studio":
             default_text = "शुक्रवार शाम को शुरु occurred फ़ेस्टिवल में इंसाफ़ का तराज़ू फ़िल्म दिखाई गई. उत्सव के during छोटी सी बात, नया दौर और वक़्त जैसी फ़िल्में भी दिखाई जाएंगी."
             default_mix = 0.3
 
-        source_text = st.text_area("Source Article Context:", value=default_text, height=130)
+        source_text = st.text_area("Source Article Context:", value=default_text, height=150)
 
     with col_r:
         st.markdown("##### 2. Generation Configuration")
@@ -147,11 +164,15 @@ if page == "🔬 Live Verification Studio":
         if st.button("Generate Summary", type="primary", use_container_width=True):
             p_template = FACTUALITY_AWARE_PROMPT if is_factual else STANDARD_PROMPT
             formatted_p = format_prompt(p_template, input_text=source_text)
-            st.session_state["active_summary"] = client.generate(formatted_p)
-            st.session_state["last_prompt_sent"] = formatted_p
+            try:
+                gen_res = client.generate(prompt=formatted_p, text=source_text, force_refresh=True)
+                st.session_state["active_summary"] = gen_res["text"].strip()
+                st.session_state["last_prompt_sent"] = formatted_p
+            except Exception as e:
+                st.error(f"Generation error: {e}")
 
     # Prompt Comparison Viewer
-    with st.expander("🔍 Compare Prompts: Standard vs Factuality-Aware (Click to Expand)", expanded=True):
+    with st.expander("Compare Prompts: Standard vs Factuality-Aware", expanded=False):
         pt1, pt2 = st.columns(2)
         with pt1:
             st.markdown("**Standard Prompt Template:**")
@@ -167,10 +188,15 @@ if page == "🔬 Live Verification Studio":
 
     st.markdown("##### 3. Summary Text")
     summary_val = st.session_state.get("active_summary", "")
-    summary_input = st.text_input("Summary Text to Verify (Click 'Generate Summary' or type here):", value=summary_val, placeholder="No summary generated yet. Click 'Generate Summary' above.")
+    summary_input = st.text_area(
+        "Summary Text to Verify (Click 'Generate Summary' or edit directly):",
+        value=summary_val,
+        height=95,
+        placeholder="No summary generated yet. Click 'Generate Summary' above.",
+    )
 
     if not summary_input.strip():
-        st.info("👆 Select a source article and click **'Generate Summary'** (or type a summary) to see claim verification.")
+        st.info("Select a source article and click 'Generate Summary' (or type a summary) to run verification.")
         st.stop()
 
     # Run Verification only if summary is present
@@ -196,7 +222,7 @@ if page == "🔬 Live Verification Studio":
         badge_cls = f"badge-{c['type']}"
         is_supp = (c["verdict"] == "supported")
         status_cls = "badge-supported" if is_supp else "badge-unsupported"
-        status_txt = "✓ Supported" if is_supp else f"✗ {c['error_type'].replace('_', ' ').title()}"
+        status_txt = "Supported" if is_supp else c['error_type'].replace('_', ' ').title()
 
         with st.container():
             st.markdown(f"""
@@ -216,19 +242,22 @@ if page == "🔬 Live Verification Studio":
     if res["unsupported_claims"] > 0:
         st.markdown("---")
         st.warning(f"Found {res['unsupported_claims']} unsupported claim(s). Trigger the revision loop to remove/correct ungrounded facts.")
-        if st.button("🚀 Run Iterative Revision Loop (Person C - Task 9)", type="secondary"):
-            reviser = SummaryReviser(llm_client=client, max_rounds=2)
-            flagged = [c["text"] for c in res["claims"] if c["verdict"] == "unsupported"]
-            rev_out = reviser.revise_summary(source_text, summary_input, flagged, current_round=1)
-            
-            re_ver = verifier.verify_summary(source_text, rev_out["revised_summary"])
-            st.success("✅ Revision Loop Complete!")
-            st.markdown(f"**Revised Summary (Round 1):** `{rev_out['revised_summary']}`")
-            st.markdown(f"**Hallucination Rate after Revision:** **{re_ver['hallucination_rate']*100:.1f}%** (Resolved: {re_ver['unsupported_claims'] == 0})")
+        if st.button("Run Iterative Revision Loop", type="secondary"):
+            try:
+                reviser = SummaryReviser(llm_client=client, max_rounds=2)
+                flagged = [c["text"] for c in res["claims"] if c["verdict"] == "unsupported"]
+                rev_out = reviser.revise_summary(source_text, summary_input, flagged, current_round=1)
+                
+                re_ver = verifier.verify_summary(source_text, rev_out["revised_summary"])
+                st.success("Revision Loop Complete")
+                st.markdown(f"**Revised Summary (Round 1):** `{rev_out['revised_summary']}`")
+                st.markdown(f"**Hallucination Rate after Revision:** **{re_ver['hallucination_rate']*100:.1f}%** (Resolved: {re_ver['unsupported_claims'] == 0})")
+            except Exception as e:
+                st.error(f"Revision error: {e}")
 
 # PAGE 2: BENCHMARK & ANALYSIS PLOTS
-elif page == "📊 Benchmark & Analysis Plots":
-    st.title("📊 Benchmark & Milestone 1 Analysis Plots")
+elif page == "Benchmark & Analysis Plots":
+    st.title("Benchmark & Analysis Plots")
     st.caption("Visualizing empirical findings across 2,500 summaries and 5 code-mixing levels (0%, 10%, 30%, 50%, 100%).")
 
     fig_dir = PROJECT_ROOT / "results" / "figures"
@@ -240,7 +269,7 @@ elif page == "📊 Benchmark & Analysis Plots":
         p1 = fig_dir / "prompt_comparison.png"
         if p1.exists():
             st.image(str(p1), use_container_width=True)
-            st.info("💡 **Takeaway:** Factuality-Aware prompting eliminates hallucinations (~0.00) while standard prompt peaks on Hinglish (10.4%).")
+            st.info("Factuality-Aware prompting eliminates hallucinations (~0.00) while standard prompt peaks on Hinglish (10.4%).")
 
     with c2:
         st.markdown("##### 2. Iterative Revision Progression")
@@ -248,7 +277,7 @@ elif page == "📊 Benchmark & Analysis Plots":
         p2 = fig_dir / "revise_loop_progression.png"
         if p2.exists():
             st.image(str(p2), use_container_width=True)
-            st.info("💡 **Takeaway:** The iterative loop eliminates ungrounded claims after Round 1 without degrading content recall.")
+            st.info("The iterative loop eliminates ungrounded claims after Round 1 without degrading content recall.")
 
     st.markdown("---")
 
@@ -259,7 +288,7 @@ elif page == "📊 Benchmark & Analysis Plots":
         p3 = fig_dir / "hallucination_by_mixing_tier.png"
         if p3.exists():
             st.image(str(p3), use_container_width=True)
-            st.info("💡 **Takeaway:** Hallucination rate shows an elevated plateau across the code-mixed bands (10%-50%).")
+            st.info("Hallucination rate shows an elevated plateau across the code-mixed bands (10%-50%).")
 
     with c4:
         st.markdown("##### 4. Factuality Error Taxonomy")
@@ -267,11 +296,11 @@ elif page == "📊 Benchmark & Analysis Plots":
         p4 = fig_dir / "error_distribution.png"
         if p4.exists():
             st.image(str(p4), use_container_width=True)
-            st.info("💡 **Takeaway:** Number Drift is the predominant failure mode in code-mixed generation, followed by Relation Distortion.")
+            st.info("Number Drift is the predominant failure mode in code-mixed generation, followed by Relation Distortion.")
 
 # PAGE 3: DATASET & VERDICTS BROWSER
-elif page == "📑 Dataset & Verdicts Browser":
-    st.title("📑 Dataset & Verdicts Browser")
+elif page == "Dataset & Verdicts Browser":
+    st.title("Dataset & Verdicts Browser")
     st.caption("Explore verified summaries and error labels from the processed handoff records.")
 
     vpath = PROJECT_ROOT / "data" / "processed" / "verdicts.jsonl"

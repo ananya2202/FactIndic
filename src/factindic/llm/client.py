@@ -44,7 +44,7 @@ class BaseLLMClient(ABC):
         """Invokes provider backend to generate response."""
         pass
 
-    def generate(self, prompt: str, text: str, force_refresh: bool = False) -> Dict[str, Any]:
+    def generate(self, prompt: str, text: str = "", force_refresh: bool = False) -> Dict[str, Any]:
         """Generates summary with transparent cache management."""
         start_time = time.time()
 
@@ -102,9 +102,29 @@ class MockLLMClient(BaseLLMClient):
                 if m:
                     text = m.group(1).strip()
 
-        # Extract first sentences of source text
-        sentences = [s.strip() for s in re.split(r"[।\n]|(?<!\d)\.(?!\d)", text) if s.strip()]
-        base_sentence = sentences[0] if sentences else text[:120]
+        # Extract language features
+        has_english = bool(re.search(r"[a-zA-Z]", text))
+        has_hindi = bool(re.search(r"[\u0900-\u097F]", text))
+        is_mixed = has_english and has_hindi
+
+        def _get_punct(s: str) -> str:
+            return "।" if re.search(r"[\u0900-\u097F]\s*$", s) else "."
+
+        # Extract sentences of source text
+        sentences = [s.strip() for s in re.split(r"[।\n]|(?<!\d)\.(?!\d)", text) if s.strip() and len(s.strip().split()) >= 3]
+        if not sentences:
+            base_sentence = text[:150].strip()
+        elif len(sentences) == 1:
+            base_sentence = sentences[0]
+        else:
+            s1 = sentences[0]
+            s2 = sentences[1]
+            p1 = _get_punct(s1)
+            # Combine 2 sentences if first sentence is short (< 18 words) to form a complete 20-40 word summary
+            if len(s1.split()) < 18 and len((s1 + " " + s2).split()) <= 45:
+                base_sentence = f"{s1.rstrip(' ।.')}{p1} {s2.rstrip(' ।.')}"
+            else:
+                base_sentence = s1
 
         # 1. In Revision Mode:
         if is_revision:
@@ -119,26 +139,26 @@ class MockLLMClient(BaseLLMClient):
             cleaned = prev_summary
             for fc in flagged_list:
                 if fc in cleaned:
-                    cleaned = cleaned.replace(fc, "").strip(" ,।")
+                    cleaned = cleaned.replace(fc, "").strip(" ,।.")
 
             if "तथा संबंधित अधिकारियों ने नए आदेश जारी किए" in cleaned:
                 cleaned = cleaned.replace(" तथा संबंधित अधिकारियों ने नए आदेश जारी किए", "")
+            if "and relevant authorities issued new directives" in cleaned:
+                cleaned = cleaned.replace(" and relevant authorities issued new directives", "")
 
             if len(cleaned.split()) < 3:
                 cleaned = base_sentence
 
-            return f"{cleaned.rstrip('।')}।"
+            punct = _get_punct(cleaned)
+            return f"{cleaned.rstrip(' ।.')}{punct}"
 
         # 2. In Factuality-Aware mode:
         if is_factual_prompt:
-            return f"{base_sentence.rstrip('।')}।"
+            punct = _get_punct(base_sentence)
+            return f"{base_sentence.rstrip(' ।.')}{punct}"
 
         # 3. In Standard Prompt mode:
-        has_english = bool(re.search(r"[a-zA-Z]", text))
-        has_hindi = bool(re.search(r"[\u0900-\u097F]", text))
-        is_mixed = has_english and has_hindi
-
-        summary = base_sentence.rstrip("।")
+        summary = base_sentence.rstrip(" ।.")
 
         text_hash = hash(text) % 100
         hallucinate_threshold = 48 if is_mixed else 16
@@ -149,9 +169,14 @@ class MockLLMClient(BaseLLMClient):
                 drifted_num = str(int(orig_num) + 5)
                 summary = summary.replace(orig_num, drifted_num, 1)
             else:
-                summary = f"{summary} तथा संबंधित अधिकारियों ने नए आदेश जारी किए"
+                if _get_punct(summary) == "।":
+                    extra = " तथा संबंधित अधिकारियों ने नए आदेश जारी किए"
+                else:
+                    extra = " and relevant authorities issued new directives"
+                summary = f"{summary}{extra}"
 
-        return f"{summary}।"
+        punct = _get_punct(summary)
+        return f"{summary.rstrip(' ।.')}{punct}"
 
 
 class GeminiLLMClient(BaseLLMClient):
