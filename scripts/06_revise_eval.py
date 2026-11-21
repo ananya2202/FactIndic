@@ -119,6 +119,8 @@ def main():
 
         # Check if revision is required
         if unsupported_count == 0 or h_rate_before == 0.0:
+            trace_records.append({"article_id": art_id, "version_id": ver_id, "mixing_level": v.get("mixing_level", 0.0), "prompt_type": prompt_type, "round": 1, "unsupported_claims": 0})
+            trace_records.append({"article_id": art_id, "version_id": ver_id, "mixing_level": v.get("mixing_level", 0.0), "prompt_type": prompt_type, "round": 2, "unsupported_claims": 0})
             final_verdicts.append(v)
             continue
 
@@ -147,8 +149,17 @@ def main():
             active_summary = revised_text
             current_h_rate = new_h_rate
 
-            # If completely resolved (0 hallucination), break early
+            # If completely resolved (0 hallucination), record remaining rounds as 0 and break early
             if new_h_rate == 0.0:
+                for future_r in range(r + 1, args.max_rounds + 1):
+                    trace_records.append({
+                        "article_id": art_id,
+                        "version_id": ver_id,
+                        "mixing_level": v.get("mixing_level", 0.0),
+                        "prompt_type": prompt_type,
+                        "round": future_r,
+                        "unsupported_claims": 0,
+                    })
                 break
 
             # Update flagged claims for round 2 if needed

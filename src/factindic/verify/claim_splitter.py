@@ -59,8 +59,9 @@ class ClaimSplitter:
         if not summary_text or not summary_text.strip():
             return []
 
-        # Split into clauses by danda, newline, period NOT surrounded by digits, commas, and conjunctions
-        raw_clauses = re.split(r"[।\n]|(?<!\d)\.(?!\d)|,\s*|\s+(?:तथा|और|एवं|\bbut\b|\band\b|\bwhile\b|\bwhereas\b)\s+", summary_text)
+        # Split into independent propositions by sentence boundaries (danda, newline, exclamation, question mark, period NOT surrounded by digits, or semicolon)
+        # Avoid splitting on commas or coordinating conjunctions to prevent creating dangling subjectless fragments
+        raw_clauses = re.split(r"[।\n!?;\r]|(?<!\d)\.(?!\d)", summary_text)
 
         claims: List[Claim] = []
         claim_counter = 1

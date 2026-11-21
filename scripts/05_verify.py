@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--standard_weight", type=float, default=1.0, help="Weight for standard facts")
     parser.add_argument("--penalty", type=float, default=1.0, help="Hallucination penalty factor")
     parser.add_argument("--nli_thresh", type=float, default=0.65, help="NLI entailment cutoff threshold")
+    parser.add_argument("--use_hf", action="store_true", help="Enable deep HuggingFace transformer model (slower on CPU)")
     parser.add_argument("--limit", type=int, default=None, help="Optional limit on summaries to verify")
     args = parser.parse_args()
 
@@ -52,6 +53,7 @@ def main():
         standard_weight=args.standard_weight,
         hallucination_penalty=args.penalty,
         entailment_threshold=args.nli_thresh,
+        use_hf=args.use_hf,
     )
 
     verdicts = []

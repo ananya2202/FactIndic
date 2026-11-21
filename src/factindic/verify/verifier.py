@@ -19,10 +19,11 @@ class FactualityVerifier:
         standard_weight: float = 1.0,
         hallucination_penalty: float = 1.0,
         entailment_threshold: float = 0.65,
+        use_hf: bool = False,
     ):
         self.splitter = ClaimSplitter()
         self.rules = RuleMatcher()
-        self.nli = NLIVerifier(entailment_threshold=entailment_threshold)
+        self.nli = NLIVerifier(entailment_threshold=entailment_threshold, use_hf=use_hf)
         self.key_facts_extractor = KeyFactExtractor(
             critical_weight=critical_weight,
             standard_weight=standard_weight,
@@ -46,8 +47,11 @@ class FactualityVerifier:
             rule_res = self.rules.verify_claim(c.text, source_text)
             nli_res = self.nli.score(source_text, c.text)
 
-            # Combined decision: passes if rules pass AND NLI entails
-            if rule_res["passed"] and nli_res["label"] == "entailment":
+            is_contradicted = (nli_res["label"] == "contradiction")
+            is_grounded = (nli_res["label"] == "entailment") or (nli_res["label"] == "neutral" and nli_res["entailment_score"] >= 0.25)
+
+            # Combined decision: passes if strict rules pass, claim is grounded, and not contradicted
+            if rule_res["passed"] and is_grounded and not is_contradicted:
                 verdict = "supported"
                 error_type = "none"
             else:
@@ -59,7 +63,7 @@ class FactualityVerifier:
                 # Prioritize rule error type if rule failed, else NLI failure
                 if not rule_res["passed"]:
                     error_type = rule_res["error_type"]
-                elif nli_res["label"] == "contradiction":
+                elif is_contradicted:
                     error_type = "relation_distortion"
                 else:
                     error_type = "unsupported_claim"

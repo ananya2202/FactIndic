@@ -113,11 +113,21 @@ class MockLLMClient(BaseLLMClient):
             if m_prev:
                 prev_summary = m_prev.group(1).strip()
 
-            if "तथा संबंधित अधिकारियों ने नए आदेश जारी किए" in prev_summary:
-                cleaned = prev_summary.replace(" तथा संबंधित अधिकारियों ने नए आदेश जारी किए", "")
-                return f"{cleaned.rstrip('।')}।"
+            m_flagged = re.search(r"FLAGGED UNSUPPORTED CLAIMS:\s*\n(.*?)(?=\n\s*REVISION INSTRUCTIONS|\Z)", prompt, re.DOTALL)
+            flagged_list = [f.lstrip("- ").strip() for f in m_flagged.group(1).splitlines() if f.strip()] if m_flagged else []
 
-            return f"{base_sentence.rstrip('।')}।"
+            cleaned = prev_summary
+            for fc in flagged_list:
+                if fc in cleaned:
+                    cleaned = cleaned.replace(fc, "").strip(" ,।")
+
+            if "तथा संबंधित अधिकारियों ने नए आदेश जारी किए" in cleaned:
+                cleaned = cleaned.replace(" तथा संबंधित अधिकारियों ने नए आदेश जारी किए", "")
+
+            if len(cleaned.split()) < 3:
+                cleaned = base_sentence
+
+            return f"{cleaned.rstrip('।')}।"
 
         # 2. In Factuality-Aware mode:
         if is_factual_prompt:
@@ -131,7 +141,8 @@ class MockLLMClient(BaseLLMClient):
         summary = base_sentence.rstrip("।")
 
         text_hash = hash(text) % 100
-        if is_mixed and text_hash < 40:
+        hallucinate_threshold = 48 if is_mixed else 16
+        if text_hash < hallucinate_threshold:
             num_match = re.search(r"\b(\d+)\b", summary)
             if num_match:
                 orig_num = num_match.group(1)

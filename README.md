@@ -169,6 +169,19 @@ python3 scripts/10_analysis.py
 - `prompt_comparison.png`
 - `revise_loop_progression.png`
 
+#### Real Hinglish Validation (MUTANT & GupShup - RQ5)
+
+Evaluate the model and verification pipeline on authentic, real-world code-mixed news (MUTANT) and dialogues (GupShup):
+
+```bash
+python scripts/09_real_hinglish.py
+```
+
+**Outputs:**
+- `data/processed/real_hinglish_verdicts.jsonl` — claim-level verdicts and revision traces on real Hinglish text.
+- `results/tables/real_hinglish_comparison.csv` — metrics comparing Standard vs. Factuality-Aware prompts and revision loop on MUTANT and GupShup.
+- `results/figures/real_hinglish_validation.png` — publication chart validating synthetic findings against real Hinglish text.
+
 #### Human annotation and agreement
 
 Two annotators must independently label all 150 claims in `results/tables/human_annotation_sheet.csv` using `SUPPORTED`, `CONTRADICTED`, or `NOT_ENOUGH_INFO`.

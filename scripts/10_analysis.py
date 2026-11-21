@@ -111,7 +111,7 @@ def create_revision_comparison():
 
     round_data = {}
     for row in trace_rows:
-        key = (row["article_id"], row["version_id"])
+        key = (row["article_id"], row["version_id"], row.get("prompt_type", "standard"))
         round_data.setdefault(key, {})[int(row["round"])] = int(
             row["unsupported_claims"]
         )
