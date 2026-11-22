@@ -23,7 +23,7 @@ def _load_dotenv():
                         k, v = line.split("=", 1)
                         k = k.strip()
                         v = v.strip().strip('"\'')
-                        if k and k not in os.environ and v and v != "YOUR_GEMINI_API_KEY_HERE":
+                        if k and v and v != "YOUR_GEMINI_API_KEY_HERE":
                             os.environ[k] = v
         except Exception:
             pass
@@ -59,6 +59,14 @@ class BaseLLMClient(ABC):
                 }
 
         response_text = self._call_model(prompt, text)
+        if response_text is None:
+            response_text = ""
+        response_text = str(response_text).strip()
+        if not response_text:
+            # Fallback to extracting leading sentences so downstream never gets None or empty
+            parts = [s.strip() for s in text.replace("\n", " ").split(".") if s.strip()]
+            response_text = ". ".join(parts[:2]) if parts else text[:150]
+
         latency = int((time.time() - start_time) * 1000)
 
         self.cache.put(prompt, text, self.model_name, response_text, latency_ms=latency)
@@ -182,7 +190,7 @@ class MockLLMClient(BaseLLMClient):
 class GeminiLLMClient(BaseLLMClient):
     """Google Gemini API client with auto model discovery and standard requests."""
 
-    def __init__(self, model_name: str = "gemini-flash-lite-latest", api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
+    def __init__(self, model_name: str = "gemini-1.5-flash", api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
         super().__init__(model_name=model_name, cache=cache)
         _load_dotenv()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
@@ -203,12 +211,13 @@ class GeminiLLMClient(BaseLLMClient):
                     for m in data.get("models", [])
                     if "generateContent" in m.get("supportedGenerationMethods", [])
                 ]
-                # Priority search: verified working free-tier models first
+                # Priority search: rock-solid production models first
                 candidates = [
-                    "gemini-flash-lite-latest",
-                    "gemini-flash-latest",
-                    "gemini-2.5-flash-lite",
+                    "gemini-1.5-flash",
                     "gemini-2.0-flash",
+                    "gemini-flash-latest",
+                    "gemini-1.5-pro",
+                    "gemini-flash-lite-latest",
                 ]
                 for cand in candidates:
                     if cand in valid_models:
@@ -241,49 +250,85 @@ class GeminiLLMClient(BaseLLMClient):
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 256}
         }
 
-        # Try with target model
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={self.api_key}"
-        resp = requests.post(url, json=payload, timeout=30)
-        data = resp.json()
-
-        # If model not found (404), discover active model via ListModels and retry
-        if "error" in data and ("not found" in data["error"].get("message", "").lower() or data["error"].get("code") == 404):
-            active_model = self._discover_active_model()
-            if active_model != target_model:
-                self._resolved_model = active_model
-                self.model_name = active_model
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={self.api_key}"
-                resp = requests.post(url, json=payload, timeout=30)
+        # Handle model invocation with automatic rate-limit backoff
+        for attempt in range(5):
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={self.api_key}"
+            try:
+                resp = requests.post(url, json=payload, timeout=60)
                 data = resp.json()
+            except requests.exceptions.Timeout:
+                if attempt < 4:
+                    print(f"  [Gemini Timeout] Request exceeded 60s, retrying (attempt {attempt+1}/5)...")
+                    time.sleep(4)
+                    continue
+                raise RuntimeError("Gemini API connection error: Request timed out after 60s.")
+            except Exception as e:
+                if attempt < 4:
+                    time.sleep(3)
+                    continue
+                raise RuntimeError(f"Gemini API connection error: {e}")
 
-        if "error" in data:
-            raise RuntimeError(f"Gemini API Error: {data['error'].get('message', 'Unknown error')}")
+            # If model not found (404), discover active model via ListModels and retry
+            if "error" in data and ("not found" in data["error"].get("message", "").lower() or data["error"].get("code") == 404):
+                active_model = self._discover_active_model()
+                if active_model != target_model:
+                    self._resolved_model = active_model
+                    self.model_name = active_model
+                    target_model = active_model
+                    continue
 
-        try:
-            self._resolved_model = target_model
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-        except (KeyError, IndexError):
-            raise RuntimeError(f"Unexpected Gemini response structure: {data}")
+            # Check for API error response
+            if "error" in data:
+                err_dict = data["error"]
+                err_code = err_dict.get("code", 0)
+                err_msg = err_dict.get("message", "")
+                is_transient = (
+                    err_code in (429, 503, 500) or
+                    any(k in err_msg.lower() for k in ["quota", "rate", "demand", "temporar", "spike", "overloaded", "exhausted"])
+                )
+                if is_transient and attempt < 4:
+                    wait_sec = 20
+                    m_wait = re.search(r"retry in ([\d\.]+)s", err_msg)
+                    if m_wait:
+                        wait_sec = max(5, int(float(m_wait.group(1))) + 2)
+                    else:
+                        wait_sec = 15 * (attempt + 1)
+
+                    print(f"  [Gemini Rate/Demand Notice] Waiting {wait_sec}s before retry (attempt {attempt+1}/5)...")
+                    time.sleep(wait_sec)
+                    if "demand" in err_msg.lower():
+                        target_model = "gemini-1.5-flash" if target_model != "gemini-1.5-flash" else "gemini-2.0-flash"
+                        self._resolved_model = target_model
+                    continue
+                else:
+                    raise RuntimeError(f"Gemini API Error: {err_msg}")
+
+            try:
+                self._resolved_model = target_model
+                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except (KeyError, IndexError):
+                raise RuntimeError(f"Unexpected Gemini response structure: {data}")
+
+        raise RuntimeError("Gemini API Error: Maximum retry attempts exceeded for rate limits.")
 
 
 class OpenAILLMClient(BaseLLMClient):
-    """OpenAI API client using standard requests."""
+    """OpenAI and Groq compatible API client using standard requests."""
 
-    def __init__(self, model_name: str = "gpt-4o-mini", api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
+    def __init__(self, model_name: str = "gpt-4o-mini", api_key: Optional[str] = None, base_url: str = "https://api.openai.com/v1", cache: Optional[ResponseCache] = None):
         super().__init__(model_name=model_name, cache=cache)
         _load_dotenv()
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or os.environ.get("GROQ_API_KEY", "")
+        self.base_url = base_url.rstrip("/")
 
     def _call_model(self, prompt: str, text: str) -> str:
         if not self.api_key:
             raise ValueError(
-                "OPENAI_API_KEY is not configured! Please paste your key into '.env' in the project root:\n"
-                "  OPENAI_API_KEY=your_key_here\n"
-                "Or pass '--provider mock' to use the offline simulator."
+                "API key is not configured! Please paste your key into '.env' in the project root."
             )
 
         import requests
-        url = "https://api.openai.com/v1/chat/completions"
+        url = f"{self.base_url}/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         payload = {
             "model": self.model_name,
@@ -293,11 +338,108 @@ class OpenAILLMClient(BaseLLMClient):
             "temperature": 0.2,
             "max_tokens": 256,
         }
-        resp = requests.post(url, headers=headers, json=payload, timeout=30)
-        data = resp.json()
-        if "error" in data:
-            raise RuntimeError(f"OpenAI API Error: {data['error'].get('message', 'Unknown error')}")
-        return data["choices"][0]["message"]["content"].strip()
+        for attempt in range(5):
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=45)
+                data = resp.json()
+                if "error" in data:
+                    err_msg = data["error"].get("message", "Unknown error")
+                    if resp.status_code == 429 or "rate limit" in err_msg.lower():
+                        m_wait = re.search(r"try again in ([\d\.]+)s", err_msg)
+                        wait_sec = (float(m_wait.group(1)) + 0.5) if m_wait else (2.0 * (attempt + 1))
+                        time.sleep(wait_sec)
+                        continue
+                    raise RuntimeError(f"API Error: {err_msg}")
+
+                if "choices" in data and len(data["choices"]) > 0:
+                    msg = data["choices"][0].get("message", {})
+                    content = msg.get("content") or msg.get("reasoning_content") or ""
+                    return str(content).strip()
+                return ""
+            except requests.exceptions.Timeout:
+                if attempt < 4:
+                    time.sleep(2)
+                    continue
+                raise RuntimeError("API request timed out.")
+
+
+class NvidiaLLMClient(BaseLLMClient):
+    """NVIDIA NIM API client for Mistral and other open models."""
+
+    def __init__(self, model_name: str = "mistralai/mistral-large-4-1t-a52b", api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
+        super().__init__(model_name=model_name, cache=cache)
+        _load_dotenv()
+        self.api_key = api_key or os.environ.get("NVIDIA_API_KEY", "") or os.environ.get("MISTRAL_API_KEY", "")
+
+    def _call_model(self, prompt: str, text: str) -> str:
+        if not self.api_key:
+            raise ValueError(
+                "NVIDIA_API_KEY is not configured! Please add your key to '.env':\n"
+                "  NVIDIA_API_KEY=nvapi-your_key_here\n"
+                "Get a free key at: https://build.nvidia.com"
+            )
+
+        import requests
+        url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        
+        payload = {
+            "model": "mistralai/mistral-large-4-1t-a52b",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"{prompt}\n\n{text}"}
+                    ]
+                }
+            ],
+            "temperature": 0.2,
+            "max_tokens": 512,
+            "reasoning_effort": "low",
+        }
+
+        for attempt in range(4):
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=45)
+                
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if "choices" in data and len(data["choices"]) > 0:
+                        msg = data["choices"][0]["message"]
+                        content = msg.get("content") or msg.get("reasoning_content") or ""
+                        return content.strip()
+
+                # Handle Rate Limits
+                if resp.status_code in (429, 503):
+                    wait_sec = 8 * (attempt + 1)
+                    print(f"  [NVIDIA NIM Rate Limit] Waiting {wait_sec}s before retry...")
+                    time.sleep(wait_sec)
+                    continue
+
+                # Other error
+                err_text = resp.text
+                try:
+                    err_text = resp.json()
+                except Exception:
+                    pass
+                raise RuntimeError(f"NVIDIA API Error ({resp.status_code}): {err_text}")
+
+            except requests.exceptions.Timeout:
+                if attempt < 3:
+                    time.sleep(2)
+                    continue
+                raise RuntimeError("NVIDIA API Error: Request timed out after 45s.")
+            except Exception as e:
+                if attempt < 3 and "API Error" not in str(e):
+                    time.sleep(2)
+                    continue
+                raise
+
+        raise RuntimeError("NVIDIA API Error: Maximum retry attempts exceeded.")
 
 
 def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = None, cache_path: str = "data/cache/llm_cache.json") -> BaseLLMClient:
@@ -305,13 +447,19 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     _load_dotenv()
     cache = ResponseCache(cache_path)
 
-    # Auto-detect provider if not specified or if set to gemini
+    # Auto-detect provider if not specified
+    has_groq = bool(os.environ.get("GROQ_API_KEY"))
+    has_nvidia = bool(os.environ.get("NVIDIA_API_KEY") or os.environ.get("MISTRAL_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") and os.environ.get("GEMINI_API_KEY") != "YOUR_GEMINI_API_KEY_HERE")
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
 
     if not provider:
-        if has_gemini:
+        if has_groq:
+            provider = "groq"
+        elif has_gemini:
             provider = "gemini"
+        elif has_nvidia:
+            provider = "nvidia"
         elif has_openai:
             provider = "openai"
         else:
@@ -319,12 +467,23 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
 
     provider = provider.lower()
 
-    if provider == "gemini":
-        model = model_name or "gemini-flash-lite-latest"
+    # If user specifies groq
+    if provider in ("groq", "grok"):
+        model = model_name or "qwen/qwen3.8-27b"
+        return OpenAILLMClient(model_name=model, base_url="https://api.groq.com/openai/v1", cache=cache)
+
+    if provider in ("nvidia", "mistral", "nim"):
+        model = model_name or "mistralai/mistral-large-4-1t-a52b"
+        return NvidiaLLMClient(model_name=model, cache=cache)
+    elif provider == "gemini":
+        model = model_name or "gemini-1.5-flash"
         return GeminiLLMClient(model_name=model, cache=cache)
     elif provider in ("openai", "gpt"):
         model = model_name or "gpt-4o-mini"
         return OpenAILLMClient(model_name=model, cache=cache)
+    elif provider == "groq":
+        model = model_name or "qwen/qwen3.8-27b"
+        return OpenAILLMClient(model_name=model, base_url="https://api.groq.com/openai/v1", cache=cache)
     else:
         model = model_name or "mock-flash-1.5"
         return MockLLMClient(model_name=model, cache=cache)

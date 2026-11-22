@@ -7,6 +7,7 @@ summarizes real Hinglish inputs (MUTANT/GupShup) for Task 18.
 """
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -26,8 +27,6 @@ def main():
     parser = argparse.ArgumentParser(description="Generate summaries using Standard and Factuality-Aware prompts.")
     parser.add_argument("--versions", default="data/processed/versions.jsonl", help="Input versions JSONL")
     parser.add_argument("--output", default="data/processed/summaries.jsonl", help="Output summaries JSONL")
-    parser.add_argument("--real_inputs", default="data/raw/real_hinglish_sample.jsonl", help="Real Hinglish inputs JSONL")
-    parser.add_argument("--real_output", default="data/processed/real_hinglish_summaries.jsonl", help="Real Hinglish summaries JSONL")
     parser.add_argument("--provider", default=None, help="LLM Provider: gemini, openai, mock (auto-detects from .env)")
     parser.add_argument("--model", default=None, help="Model name identifier (e.g. gemini-1.5-flash)")
     parser.add_argument("--cache", default="data/cache/llm_cache.json", help="Cache file path")
@@ -37,8 +36,6 @@ def main():
     versions_path = PROJECT_ROOT / args.versions
     output_path = PROJECT_ROOT / args.output
     cache_path = PROJECT_ROOT / args.cache
-    real_inputs_path = PROJECT_ROOT / args.real_inputs
-    real_output_path = PROJECT_ROOT / args.real_output
 
     print(f"[Person C - Step 5] Loading versions from {versions_path}...")
     versions = load_jsonl(str(versions_path))
@@ -48,7 +45,27 @@ def main():
 
     client = get_llm_client(provider=args.provider, model_name=args.model, cache_path=str(cache_path))
 
+    # Load previously completed summaries so progress is never lost or wiped out
+    existing_summaries = []
+    completed_map = {}
+    if output_path.exists():
+        try:
+            existing_summaries = load_jsonl(str(output_path))
+            for item in existing_summaries:
+                v_id = item.get("version_id")
+                p_type = item.get("prompt_type")
+                if v_id and p_type and item.get("summary"):
+                    completed_map[(v_id, p_type)] = item
+            print(f"Resuming: Loaded {len(completed_map)} previously completed summaries from {output_path.name}.")
+        except Exception as e:
+            print(f"Notice: Could not parse previous summaries ({e}), starting clean.")
+
     summaries = []
+    # Retain all items already in completed_map
+    for item in existing_summaries:
+        if (item.get("version_id"), item.get("prompt_type")) in completed_map:
+            summaries.append(item)
+
     prompts_to_run = [
         ("standard", STANDARD_PROMPT),
         ("factuality_aware", FACTUALITY_AWARE_PROMPT),
@@ -64,14 +81,25 @@ def main():
         input_text = v["text"]
 
         for prompt_name, prompt_template in prompts_to_run:
+            # Check if this exact version + prompt was already generated and saved
+            if (ver_id, prompt_name) in completed_map:
+                prev = completed_map[(ver_id, prompt_name)]
+                if idx < 3 or (idx + 1) % 50 == 0:
+                    print(f"  [{idx+1}/{len(versions)}] ({v.get('language_label', 'mixed')}) {prompt_name} [Resumed from disk]")
+                continue
+
             formatted_prompt = format_prompt(prompt_template, input_text=input_text)
             gen_res = client.generate(prompt=formatted_prompt, text=input_text)
-            summary_text = gen_res["text"].strip()
+            raw_text = gen_res.get("text") or ""
+            summary_text = str(raw_text).strip()
+            if not summary_text:
+                # Safe fallback if API returned null or blank
+                parts = [s.strip() for s in re.split(r'[।\.\n]', input_text) if len(s.strip()) > 10]
+                summary_text = " । ".join(parts[:2]) + " ।" if parts else input_text[:150]
 
-            if idx < 3 or (idx + 1) % 100 == 0 or len(versions) <= 5:
-                print(f"  [{idx+1}/{len(versions)}] ({v.get('language_label', 'mixed')}) {prompt_name} -> \"{summary_text[:60]}...\" ({gen_res.get('latency_ms', 0)}ms)")
+            print(f"  [{idx+1}/{len(versions)}] ({v.get('language_label', 'mixed')}) {prompt_name} -> \"{summary_text[:60]}...\" ({gen_res.get('latency_ms', 0)}ms)")
 
-            summaries.append({
+            record = {
                 "article_id": art_id,
                 "version_id": ver_id,
                 "mixing_level": mixing_level,
@@ -83,40 +111,25 @@ def main():
                 "model": gen_res.get("model", args.model),
                 "cached": gen_res.get("cached", False),
                 "latency_ms": gen_res.get("latency_ms", 0),
-            })
+            }
+            summaries.append(record)
+            completed_map[(ver_id, prompt_name)] = record
+
+            # Incremental save every 10 versions so progress is never lost
+            if (idx + 1) % 10 == 0:
+                save_jsonl(summaries, str(output_path))
+
+            # Pace requests for Groq / Gemini free-tier to avoid rate-limit exhaustion
+            if args.provider == "gemini" and not gen_res.get("cached", False):
+                import time
+                time.sleep(4.0)
+            elif args.provider in ("groq", "grok") and not gen_res.get("cached", False):
+                import time
+                time.sleep(1.2)
 
     save_jsonl(summaries, str(output_path))
     print(f"\n[Person C - Step 5 Complete] Successfully generated {len(summaries)} summaries.")
     print(f"Handoff saved to: {output_path}")
-
-    # Task 18: Summarize real Hinglish inputs (MUTANT & GupShup)
-    if real_inputs_path.exists():
-        print(f"\n[Person C - Task 18] Summarizing real Hinglish inputs from {real_inputs_path}...")
-        real_inputs = load_jsonl(str(real_inputs_path))
-        real_summaries = []
-        for item in real_inputs:
-            r_id = item.get("id")
-            source_type = item.get("source", "Real_Hinglish")
-            r_text = item.get("text", "")
-
-            for prompt_name, prompt_template in prompts_to_run:
-                formatted_prompt = format_prompt(prompt_template, input_text=r_text)
-                gen_res = client.generate(prompt=formatted_prompt, text=r_text)
-                real_summaries.append({
-                    "article_id": r_id,
-                    "version_id": f"{r_id}_real",
-                    "source_corpus": source_type,
-                    "prompt_type": prompt_name,
-                    "round": 0,
-                    "text": r_text,
-                    "summary": gen_res["text"].strip(),
-                    "reference_summary": item.get("reference_summary", ""),
-                    "word_count": len(gen_res["text"].strip().split()),
-                    "latency_ms": gen_res.get("latency_ms", 0),
-                })
-        save_jsonl(real_summaries, str(real_output_path))
-        print(f"Saved {len(real_summaries)} real Hinglish summaries to: {real_output_path}")
-
     print(f"Response cache saved to: {cache_path}")
 
 

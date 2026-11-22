@@ -104,18 +104,33 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("##### LLM Backend")
     import os
+    has_nvidia = bool(os.environ.get("NVIDIA_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") and os.environ.get("GEMINI_API_KEY") != "YOUR_GEMINI_API_KEY_HERE")
-    provider_options = ["Gemini API (Live Neural LLM)", "Offline Simulator (Mock)"]
+    
+    provider_options = ["NVIDIA NIM (Mistral Large)", "Gemini API (Live Neural LLM)", "Offline Simulator (Mock)"]
+    def_idx = 0 if has_nvidia else (1 if has_gemini else 2)
     chosen_provider_ui = st.selectbox(
         "Generation Model:",
         provider_options,
-        index=0 if has_gemini else 1,
-        help="Use real Gemini API for organic, un-scripted generation or the offline simulator."
+        index=def_idx,
+        help="Use NVIDIA NIM (Mistral), Gemini API, or the offline simulator."
     )
-    provider_key = "gemini" if "Gemini" in chosen_provider_ui else "mock"
+    if "NVIDIA" in chosen_provider_ui:
+        provider_key = "nvidia"
+    elif "Gemini" in chosen_provider_ui:
+        provider_key = "gemini"
+    else:
+        provider_key = "mock"
+
     user_api_key = ""
-    if provider_key == "gemini" and not has_gemini:
-        user_api_key = st.text_input("Gemini API Key:", type="password", help="Enter key to enable live Gemini generation")
+    if provider_key == "nvidia" and not has_nvidia:
+        user_api_key = st.text_input("NVIDIA API Key (nvapi-...):", type="password")
+        if user_api_key:
+            os.environ["NVIDIA_API_KEY"] = user_api_key
+    elif provider_key == "gemini" and not has_gemini:
+        user_api_key = st.text_input("Gemini API Key:", type="password")
+        if user_api_key:
+            os.environ["GEMINI_API_KEY"] = user_api_key
     
     st.caption(f"Active Provider: `{provider_key.upper()}`")
 
