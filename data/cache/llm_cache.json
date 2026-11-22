@@ -670,8 +670,8 @@
     "prompt_hash": "61e3bd509c3e"
   },
   "db513cab56275d26a6337a6381b412a562fc7ebeede06d250142f885c4d7e3b2": {
-    "response": "बीआर चोपड़ा के सम्मान में शुरू हुए फ़िल्मोत्सव का उद्घाटन यश चोपड़ा ने किया, जहाँ उनकी सामाजिक मुद्दों पर आधारित क्लासिक फ़िल्में दिखाई गईं। बीआर चोपड़ा की खराब सेहत के कारण वे समारोह में शामिल नहीं हो सके, जबकि रवि चोपड़ा और अन्य फिल्मकारों ने उनके योगदान की सराहना की।",
-    "latency_ms": 762,
+    "response": "बीआर चोपड़ा के सम्मान में शुक्रवार को शुरू हुए फ़िल्मोत्सव का उद्घाटन यश चोपड़ा ने किया, जहाँ उनकी सामाजिक मुद्दों पर आधारित क्लासिक फ़िल्में दिखाई गईं। बीआर चोपड़ा की खराब सेहत के कारण वे समारोह में शामिल नहीं हो सके, जबकि रवि चोपड़ा और अन्य फिल्मकारों ने उनकी प्रयोगात्मक फ़िल्मों की सराहना की।",
+    "latency_ms": 1347,
     "prompt_hash": "db513cab5627"
   },
   "186507b37e867aab61382ac93836450a492e93a4099eaa405b914b9cc504873d": {
@@ -770,8 +770,8 @@
     "prompt_hash": "c648b96edb1c"
   },
   "4aa79d4623fb6401e662a5b415d3f8ec1e911b4f9dec8635a84a5a893528c3e8": {
-    "response": "कंधार जेल में लॉरी बम विस्फोट के बाद 40 तालिबानों ने घुसकर लगभग 1,000 क़ैदियों को निकलने में सहायता की, जिसमें कई सुरक्षाकर्मियों की मौत हुई। इस घटना के बाद शहर में आपातकाल की घोषणा कर दी गई है।",
-    "latency_ms": 672,
+    "response": "कंधार जेल में लॉरी बम विस्फोट के बाद 40 तालेबान ने घुसकर लगभग 1,000 क़ैदियों, जिनमें 350 तालेबान शामिल थे, को भागने में मदद की। इस हमले में कई सुरक्षाकर्मियों की मौत हुई और शहर में आपातकाल की घोषणा कर दी गई।",
+    "latency_ms": 963,
     "prompt_hash": "4aa79d4623fb"
   },
   "dec534612e5e6ca264ecd79eb0f210c119ee21574cbc05643b84d70256a05746": {
@@ -6718,5 +6718,15 @@
     "response": "The latest incidents are in the state's Sivasagar and Golaghat districts. Earlier on Tuesday, at least six Hindi-speaking people were killed in separatist attacks in two villages",
     "latency_ms": 33120,
     "prompt_hash": "01112a6c0954"
+  },
+  "d6a371ab083e68c7f5f0e59771e84a30b8a33fa22aea2d6be2c7a12c629aaf9f": {
+    "response": "The user wants a concise summary of the provided Hindi text in 1-2 sentences, maximum 65 words, maintaining the dominant language (Hindi) and code-mixing style.\n\nKey points from the text:\n- Festival started Friday evening showing \"Insaf Ka Taraju\"\n- Classic films like \"Chhoti Si Baat\", \"Naya Daur\", \"Waqt\" will be shown\n- B.R. Chopra couldn't attend due to poor health\n- Inaugurated by his brother Yash Chopra\n- B.R. Chopra made films on social issues (widow remarriage, prostitution) that were also commercially successful\n- Son Ravi Chopra spoke about his father\n- Documentary on B.R. Chopra's life shown\n- Attendees included Yash Chopra, Raj Babbar, Basu Chatterjee, etc.\n\nI need to condense this into 1-2 sentences, max 65 words, in Hindi.\n\nDraft:\nशुक्रवार sham को शुरू हुए FILM FESTIVAL में B.R. Chopra की classic films dikhayi gayi, jisme unki social issues par based films jaise Naya Daur aur Sadhna shaamil hain. Kharaab sehat ke kaaran B.R. Chopra nahi aa sake, jabki unke bhai Yash Chopra ne inauguration kiya.\n\nWord count check:\nशुक्रवार sham को शुरू हुए FILM FESTIVAL में B.R. Chopra की classic films dikhayi gayi, jisme unki social issues par based films jaise Naya Daur aur Sadhna shaamil hain. Kharaab sehat ke kaaran B.R. Chopra nahi aa sake, jabki unke bhai Yash Chopra ne inauguration kiya.\n\nThat's about 35-40 words. Good.\n\nLet me make it flow better and ensure it captures the essence:\n\nशुक्रवार sham को शुरू हुए FILM FESTIVAL में B.R. Chopra की classic films dikhayi gayi, jisme unki social issues par based hit films jaise Naya Daur aur Sadhna shaamil hain. Kharaab sehat ke kaaran B.R. Chopra nahi aa sake, jabki unke bhai Yash Chopra ne inauguration kiya aur unki filmon ki tareef ki.\n\nWord count: around 40 words. Perfect.\n\nOr slightly more detailed:",
+    "latency_ms": 165649,
+    "prompt_hash": "d6a371ab083e"
+  },
+  "2c501f9cdc4a87f00e4bd828cdbf17300584ef0ded4f6f940db73e6cd13bebd9": {
+    "response": "कंधार जेल में लॉरी बम विस्फोट के बाद 40 तालेबान अंदर घुस आए। जेल अध्यक्ष वली करज़ई के अनुसार, जेल में मौजूद सभी 1,000 क़ैदी भाग गए, जिनमें 350 तालेबान माने जाते हैं। इस हमले में कई सुरक्षाकर्मियों की मौत हुई और शहर में आपातकाल की घोषणा कर दी गई।",
+    "latency_ms": 914,
+    "prompt_hash": "2c501f9cdc4a"
   }
 }

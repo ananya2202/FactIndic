@@ -20,7 +20,6 @@ llm_cache/
 models/
 checkpoints/
 
-
 # python / notebooks
 __pycache__/
 *.pyc
@@ -29,3 +28,4 @@ __pycache__/
 .DS_Store
 .notebooks/
 notebooks/personB/preproccess.ipynb
+.data/cache/llm_cache.json

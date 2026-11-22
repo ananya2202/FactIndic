@@ -72,7 +72,8 @@ def get_verifier(use_hf: bool = False):
 def get_active_client(provider_name: str, api_key: str = ""):
     if api_key:
         import os
-        os.environ["GEMINI_API_KEY"] = api_key
+        if provider_name == "groq":
+            os.environ["GROQ_API_KEY"] = api_key
     return get_llm_client(provider=provider_name)
 
 @st.cache_data
@@ -104,33 +105,26 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("##### LLM Backend")
     import os
-    has_nvidia = bool(os.environ.get("NVIDIA_API_KEY"))
-    has_gemini = bool(os.environ.get("GEMINI_API_KEY") and os.environ.get("GEMINI_API_KEY") != "YOUR_GEMINI_API_KEY_HERE")
+    has_groq = bool(os.environ.get("GROQ_API_KEY"))
     
-    provider_options = ["NVIDIA NIM (Mistral Large)", "Gemini API (Live Neural LLM)", "Offline Simulator (Mock)"]
-    def_idx = 0 if has_nvidia else (1 if has_gemini else 2)
+    provider_options = ["Groq (Live Neural LLM)", "Offline Simulator (Mock)"]
+    def_idx = 0 if has_groq else 1
     chosen_provider_ui = st.selectbox(
         "Generation Model:",
         provider_options,
         index=def_idx,
-        help="Use NVIDIA NIM (Mistral), Gemini API, or the offline simulator."
+        help="Groq Cloud live neural generation (Qwen 2.5)."
     )
-    if "NVIDIA" in chosen_provider_ui:
-        provider_key = "nvidia"
-    elif "Gemini" in chosen_provider_ui:
-        provider_key = "gemini"
+    if "Groq" in chosen_provider_ui:
+        provider_key = "groq"
     else:
         provider_key = "mock"
 
     user_api_key = ""
-    if provider_key == "nvidia" and not has_nvidia:
-        user_api_key = st.text_input("NVIDIA API Key (nvapi-...):", type="password")
+    if provider_key == "groq" and not has_groq:
+        user_api_key = st.text_input("Groq API Key (gsk_...):", type="password")
         if user_api_key:
-            os.environ["NVIDIA_API_KEY"] = user_api_key
-    elif provider_key == "gemini" and not has_gemini:
-        user_api_key = st.text_input("Gemini API Key:", type="password")
-        if user_api_key:
-            os.environ["GEMINI_API_KEY"] = user_api_key
+            os.environ["GROQ_API_KEY"] = user_api_key
     
     st.caption(f"Active Provider: `{provider_key.upper()}`")
 
