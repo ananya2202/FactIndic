@@ -1,9 +1,8 @@
 """
-Script 04: LLM Summarization Runner (Person C - Tasks 3, 7, 13 & 18)
+Script 04: LLM Summarization Runner (Person A - Tasks 3, 7, & 13)
 Generates summaries across all versions using Standard and Factuality-Aware prompts.
 Enforces deterministic hashing cache and records model latency and token metrics.
-Outputs data/processed/summaries.jsonl (the handoff for Person A) and
-summarizes real Hinglish inputs (MUTANT/GupShup) for Task 18.
+Outputs data/processed/summaries.jsonl for factuality verification.
 """
 
 import argparse
@@ -37,7 +36,7 @@ def main():
     output_path = PROJECT_ROOT / args.output
     cache_path = PROJECT_ROOT / args.cache
 
-    print(f"[Person C - Step 5] Loading versions from {versions_path}...")
+    print(f"[Person A - Step 5] Loading versions from {versions_path}...")
     versions = load_jsonl(str(versions_path))
     if args.limit:
         versions = versions[:args.limit]
@@ -128,7 +127,7 @@ def main():
                 time.sleep(1.2)
 
     save_jsonl(summaries, str(output_path))
-    print(f"\n[Person C - Step 5 Complete] Successfully generated {len(summaries)} summaries.")
+    print(f"\n[Person A - Step 5 Complete] Successfully generated {len(summaries)} summaries.")
     print(f"Handoff saved to: {output_path}")
     print(f"Response cache saved to: {cache_path}")
 

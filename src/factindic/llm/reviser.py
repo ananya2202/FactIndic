@@ -52,3 +52,41 @@ class SummaryReviser:
             "flagged_claims": flagged_claims,
             "latency_ms": gen_result.get("latency_ms", 0),
         }
+
+    def revise(
+        self,
+        source_text: str,
+        initial_summary: str,
+        flagged_claims: List[str],
+        verifier: Any = None,
+    ) -> Dict[str, Any]:
+        """Multi-round revision wrapper with verifier feedback."""
+        active_summary = initial_summary
+        rounds_executed = 0
+        h_rate = 1.0
+        unsupported_count = len(flagged_claims)
+        status = "unresolved"
+
+        for r in range(1, self.max_rounds + 1):
+            rounds_executed = r
+            step_res = self.revise_summary(source_text, active_summary, flagged_claims, current_round=r)
+            active_summary = step_res["revised_summary"]
+            if verifier:
+                v_res = verifier.verify_summary(source_text, active_summary)
+                h_rate = v_res.get("hallucination_rate", 0.0)
+                unsupported_count = v_res.get("unsupported_claims", 0)
+                if h_rate == 0.0:
+                    status = "resolved"
+                    break
+                flagged_claims = [c["text"] for c in v_res.get("claims", []) if c.get("verdict") == "unsupported"]
+            else:
+                status = "revised"
+                break
+
+        return {
+            "final_summary": active_summary,
+            "final_hallucination_rate": h_rate,
+            "final_unsupported_count": unsupported_count,
+            "rounds_executed": rounds_executed,
+            "status": status,
+        }

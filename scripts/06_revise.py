@@ -1,5 +1,5 @@
 """
-Script 06: Iterative Generate-Verify-Revise Loop (Person C + Person A - Tasks 9 & 13)
+Script 06: Iterative Generate-Verify-Revise Loop (Person C - Tasks 9 & 13)
 Identifies summaries with flagged unsupported claims from Person A's verifier,
 prompts the LLM with the Revision Prompt to remove/correct ungrounded claims,
 and re-verifies the revised summaries (maximum 2 rounds).
@@ -41,7 +41,7 @@ def main():
     output_path = PROJECT_ROOT / args.output
     verdicts_out_path = PROJECT_ROOT / args.output_verdicts
 
-    print(f"[Person C + A - Step 9] Loading verdicts from {verdicts_path}...")
+    print(f"[Person C - Step 9] Loading verdicts from {verdicts_path}...")
     verdicts = load_jsonl(str(verdicts_path))
     versions = {v["version_id"]: v for v in load_jsonl(str(versions_path))}
 
@@ -159,7 +159,7 @@ def main():
 
     reduction_pct = ((total_unsupported_before - total_unsupported_after) / max(1, total_unsupported_before)) * 100
 
-    print(f"\n[Person C + A - Step 9 Complete] Revision Loop Finished.")
+    print(f"\n[Person C - Step 9 Complete] Revision Loop Finished.")
     print(f"Candidates requiring revision: {candidates_for_revision}")
     print(f"Fully resolved (0% hallucination): {resolved_count}/{candidates_for_revision}")
     print(f"Unsupported claims before revision: {total_unsupported_before}")

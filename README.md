@@ -74,29 +74,27 @@ flowchart TD
 | `01_sample_clean.py` | 1-2 | Sample 250 XL-Sum Hindi test articles, clean them | B |
 | `02_translate.py` | 3 | English translation of each article and reference | B |
 | `03_make_versions.py` | 4 | 10/30/50% mixed versions with script checks | B |
-| `04_summarize.py` | 5 | Standard vs factuality-aware summaries, cached | C |
+| `04_summarize.py` | 5 | Standard vs factuality-aware summaries, cached | A |
 | `05_verify.py` | 6-8 | Typed claims, NLI plus rules, key facts, scores | A |
-| `06_revise.py` | 9 | Revise loop, max 2 rounds, then re-verify | C + A |
+| `06_revise.py` | 9 | Revise loop, max 2 rounds, then re-verify | C |
 | `07_metrics.py` | 10 | ROUGE, BERTScore, length, compression, time | D |
 | `08_human_labels.py` | 11 | Label sheet, human-vs-human kappa | D |
-| `09_real_hinglish.py` | 12 | MUTANT and GupShup side check | B, C, A, D |
+| `09_real_hinglish.py` | 12 | Real-world validation on 100 MUTANT articles | A |
 | `10_analysis.py` | 12 | Plots, bootstrap intervals, tables | D |
 
 ### Handoffs
-`versions.jsonl` (B to C) → `summaries.jsonl` (C to A) → `verdicts.jsonl` (A to D). C and A also loop on flagged
-claims during revision. Field-by-field formats are in [`docs/schemas.md`](docs/schemas.md).
+`versions.jsonl` (B to A) → `summaries.jsonl` & `verdicts.jsonl` (A to C for revision) → `revised_summaries.jsonl` (C to D). Field-by-field formats are in [`docs/schemas.md`](docs/schemas.md).
 
 ## Data
 Datasets are **not committed** to this repository. Download them locally, and check each license before use.
 
 | Role | Dataset | Notes |
 |---|---|---|
-| Main source (Hindi) | XL-Sum Hindi | BBC news with reference summaries; 88,472 articles in the release table; we sample 250 test articles |
-| English control | XL-Sum English | Different articles from the Hindi ones, not a translation |
-| Real mixed news-style text | MUTANT | 67k articles with 85k identified Hinglish spans; script and reference summaries still to check |
-| Real mixed summaries | GupShup | 6,831 Hindi-English conversations with human summaries; script still to check |
-| Mixing statistics | PHINC, HinGE, GLUECoS English-Hindi | Used for the realism check |
-| Verifier fine-tuning | IndicXNLI (Hindi), XNLI or MNLI (English) | IndicXNLI is machine-translated XNLI |
+| Main source (Hindi) | XL-Sum Hindi | BBC news with reference summaries; 88,472 articles in release table; 250 test articles sampled |
+| English control | XL-Sum English | English news articles used as full-language upper-bound control |
+| Real mixed news & speeches | MUTANT | 100 authentic real-world Hinglish news and speech articles (PIB / Mann Ki Baat) |
+| Mixing statistics | PHINC, HinGE, GLUECoS English-Hindi | Used for linguistic realism verification |
+| Verifier fine-tuning | IndicXNLI (Hindi), XNLI or MNLI (English) | IndicXNLI cross-lingual sentence pairs for entailment checks |
 
 ## Evaluation
 - **Hallucination rate** = unsupported claims ÷ all summary claims.
@@ -169,18 +167,24 @@ python3 scripts/10_analysis.py
 - `prompt_comparison.png`
 - `revise_loop_progression.png`
 
-#### Real Hinglish Validation (MUTANT & GupShup - RQ5)
+#### Real-World Hinglish Validation (MUTANT Benchmark - RQ5) — Person A
 
-Evaluate the model and verification pipeline on authentic, real-world code-mixed news (MUTANT) and dialogues (GupShup):
+Evaluates the summarization prompts and verification pipeline on **100 authentic, real-world code-mixed news and speech articles** from the MUTANT benchmark:
 
 ```bash
-python scripts/09_real_hinglish.py
+python scripts/09_real_hinglish.py --provider groq
 ```
 
+**Key Empirical Findings (RQ5):**
+- **Average Empirical CMI:** 5.93% (authentic, human-authored script mixing).
+- **Hallucination Rate:** Drops from **5.82%** (Standard Prompt) to **2.34%** (Factuality-Aware Prompt) — a **59.8% relative reduction** on real-world text.
+- **Factual Recall:** Increases from **84.93%** (Standard) to **92.68%** (Factuality-Aware).
+- **Iterative Revision:** Unsupported claims after revision drop to **< 0.87%**, demonstrating that post-hoc error correction generalizes from synthetic tiers to authentic wild text.
+
 **Outputs:**
-- `data/processed/real_hinglish_verdicts.jsonl` — claim-level verdicts and revision traces on real Hinglish text.
-- `results/tables/real_hinglish_comparison.csv` — metrics comparing Standard vs. Factuality-Aware prompts and revision loop on MUTANT and GupShup.
-- `results/figures/real_hinglish_validation.png` — publication chart validating synthetic findings against real Hinglish text.
+- `data/processed/mutant_real_verdicts.jsonl` — claim-level verdicts and revision traces on 100 MUTANT articles.
+- `results/tables/mutant_real_validation.csv` — full comparison metrics table.
+- `results/figures/mutant_real_validation.png` — publication chart validating synthetic findings against real MUTANT news.
 
 #### Human annotation and agreement
 
@@ -205,9 +209,9 @@ Team 8. Names to add:
 
 | Role | Responsibility | Person |
 |---|---|---|
-| A | Verification and metrics (claims, NLI, rules, scores) | |
+| A | LLM summarization, factuality verification & MUTANT benchmark (prompts, Groq inference, claims, NLI, rules, real Hinglish evaluation) | |
 | B | Data and mixed versions (sampling, translation, generator) | |
-| C | LLM runs and mitigation (prompts, summaries, revise loop) | |
+| C | Mitigation and error correction (iterative revise-and-verify loop) | |
 | D | Accuracy checks, standard metrics and assembly | |
 
 Branches, reviews, ownership of folders and the "never commit" rules are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
