@@ -207,8 +207,8 @@ Team 8:
 |---|---|---|
 | A | LLM summarization, factuality verification & MUTANT benchmark (prompts, Groq inference, claims, NLI, rules, real Hinglish evaluation) | Ananya Chatterjee (S24CSEU0629) |
 | B | Data and mixed versions (sampling, translation, generator) | Sidra Siddique (S24CSEU0547) |
-| C | Mitigation and error correction (iterative revise-and-verify loop) | Ishika Singh (S24CSEU1629) |
-| D | Accuracy checks, standard metrics and assembly | Vanshika (S24CSEU1688) |
+| C | Mitigation and error correction (iterative revise-and-verify loop) | vanshika (S24CSEU1688) |
+| D | Accuracy checks, standard metrics and assembly | Ishika singh (S24CSEU1629) |
 
 Branches, reviews, ownership of folders and the "never commit" rules are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
